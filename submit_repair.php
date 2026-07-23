@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->execute()) {
         
-        $channelAccessToken = 'GszSbZaQoKn+FUVG1Co2O12utBahenfC3DZ3Qx4Pr2xAWxaALZKUJOUcUaczHm+enwF80HCuvLzUssUDjqCVOT++/gl8NlhzncqdORF/2dOyXyt2GtMBdSeAYR9bevwB/3Y4txPDWrQM++i1TockxQdB04t89/1O/w1cDnyilFU=';
+        $channelAccessToken = 'NfTQOY3ht2g8OfkT1qHgiJuagAjF7ELlwVm022PejbQhCLKDrwqq14uvnicLPRv/hzCiIXwucK9LwHbz5qsYq7Bi9KgidS5XycIX1SERQzX0OYDXU7K8RPLuGMb26v2ZFhBmHTWTZ/mg6Mjll3OFEAdB04t89/1O/w1cDnyilFU=';
         
         // ==========================================
         // 1. ส่งข้อความแจ้งเตือนกลับหา "ผู้แจ้งซ่อม" แบบส่วนตัว
@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // 2. ส่งข้อความแจ้งเตือนเข้า "กลุ่มช่าง" (Admin & Technician)
         // ==========================================
         // 🚨 Group ID ของกลุ่มช่าง
-        $line_group_id = 'Caed57e09981787d718ce11abb3b2db15'; 
+        $line_group_id = ''; 
         
         // เช็คแค่ว่ามีค่า Group ID ไม่เป็นค่าว่าง ก็ให้ส่งเลย
         if(!empty($line_group_id)) {
