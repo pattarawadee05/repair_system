@@ -178,7 +178,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 $all_repairs_json = "[]";
 
 if($check_repairs->num_rows > 0) {
-    $select_fields = "ticket_no, equipment_type, status, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at_fmt, reporter_name";
+    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at_fmt, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
     if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
@@ -569,20 +569,20 @@ if($tech_list_res){
                                                 <td class='px-6 py-4'>{$techName}</td>
                                                 <td class='px-6 py-4'>{$rootCause}</td>
                                                 <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                                    if($has_received) {
-                                                        echo "<div class='font-medium text-slate-700'>{$received_date}</div>
-                                                              <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
-                                                    } else {
-                                                        echo "<span class='text-slate-400'>-</span>";
-                                                    }
+                                                if($has_received) {
+                                                    echo "<div class='font-medium text-slate-700'>{$received_date}</div>
+                                                          <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
+                                                } else {
+                                                    echo "<span class='text-slate-400'>-</span>";
+                                                }
                                             echo "</td>
                                                 <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                                    if($has_completed) {
-                                                        echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
-                                                              <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
-                                                    } else {
-                                                        echo "<span class='text-slate-400'>-</span>";
-                                                    }
+                                                if($has_completed) {
+                                                    echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
+                                                          <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
+                                                } else {
+                                                    echo "<span class='text-slate-400'>-</span>";
+                                                }
                                             echo "</td>
                                                 <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$row['status']}</span></td>
                                                 <td class='px-6 py-4 text-right'>
@@ -892,7 +892,7 @@ if($tech_list_res){
                                                 </div>
                                             </td>
                                             <td class='px-6 py-4 text-slate-500 font-medium'>".($r['phone_number'] ? $r['phone_number'] : '-')."</td>
-                                            <td class='px-6 py-4 text-center'>
+                                            <td class='px-6 py-4 text-center">
                                                 <span class='px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600'>{$r['total_repairs']}</span>
                                             </td>
                                             <td class='px-6 py-4 text-right'>
@@ -934,7 +934,7 @@ if($tech_list_res){
                         <label class="font-bold text-slate-700 text-sm flex items-center"><i class="fas fa-filter text-indigo-500 mr-2"></i> Filter Data by Technician:</label>
                         <select id="techFilter" onchange="updateExcelLink()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-medium min-w-[250px] w-full sm:w-auto cursor-pointer">
                             <option value="all">Overall System (All Technicians)</option>
-                            <?> 
+                            <?php 
                                 foreach($tech_options as $tech) {
                                     echo "<option value=\"".htmlspecialchars($tech)."\">Technician: ".htmlspecialchars($tech)."</option>"; 
                                 }
@@ -1054,22 +1054,24 @@ if($tech_list_res){
         </div>
     </div>
 
+    <!-- Modal ประวัติงาน (ปรับปรุงใหม่: Date/Time อยู่หน้าสุด พร้อมรายละเอียดครบถ้วน) -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
-        <div class="modal-container bg-white w-full max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
+        <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
             <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
                 <p class="text-lg font-extrabold text-slate-800 truncate pr-4" id="historyModalTitle">History</p>
                 <button onclick="toggleModal('historyModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 bg-white">
                 <div class="w-full overflow-x-auto rounded-2xl border border-slate-100 shadow-sm">
-                    <table class="w-full text-left whitespace-nowrap min-w-[500px]">
+                    <table class="w-full text-left whitespace-nowrap min-w-[700px]">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
                             <tr>
+                                <th class="px-5 py-4">Date / Time</th>
                                 <th class="px-5 py-4">Ticket No.</th>
+                                <th class="px-5 py-4">Reporter</th>
                                 <th class="px-5 py-4">Equipment</th>
                                 <th class="px-5 py-4 text-center">Status</th>
-                                <th class="px-5 py-4">Date</th>
                             </tr>
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50" id="historyTableBody">
@@ -1335,13 +1337,15 @@ if($tech_list_res){
             document.getElementById('edit_rep_old_name').value = old_name; document.getElementById('edit_rep_new_name').value = old_name; document.getElementById('edit_rep_new_phone').value = old_phone; toggleModal('editReporterModal');
         }
 
+        // ฟังก์ชันประวัติงานช่าง/ผู้แจ้ง (Date/Time อยู่หน้าสุด พร้อมรายละเอียดครบถ้วน)
         function viewHistory(fullName, type) {
-            const tbody = document.getElementById('historyTableBody'); tbody.innerHTML = '';
+            const tbody = document.getElementById('historyTableBody'); 
+            tbody.innerHTML = '';
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
             
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
-                tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
             } else {
                 userRepairs.forEach(r => {
                     let statusClass = 'badge-pending';
@@ -1350,15 +1354,36 @@ if($tech_list_res){
                     
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
+                    // แยกวันที่และเวลา
+                    let createdDate = '-';
+                    let createdTime = '';
+                    if(r.created_at) {
+                        let parts = r.created_at.split(' ');
+                        createdDate = parts[0] || '-';
+                        createdTime = parts[1] ? parts[1].substring(0, 5) : '';
+                    } else if(r.created_at_fmt) {
+                        createdDate = r.created_at_fmt;
+                    }
+
                     tbody.innerHTML += `<tr class="hover:bg-slate-50/50 transition-colors">
-                        <td class="px-5 py-4 font-mono font-semibold text-slate-500">${r.ticket_no}</td>
-                        <td class="px-5 py-4 text-slate-800 font-medium whitespace-normal min-w-[150px]">${r.equipment_type}</td>
+                        <td class="px-5 py-4 text-xs whitespace-nowrap">
+                            <div class="font-medium text-slate-700">${createdDate}</div>
+                            <div class="text-[11px] text-slate-400 font-semibold">${createdTime}</div>
+                        </td>
+                        <td class="px-5 py-4 font-mono font-semibold text-slate-600">${r.ticket_no || '-'}</td>
+                        <td class="px-5 py-4">
+                            <div class="text-slate-800 font-bold">${r.reporter_name || 'ไม่ระบุ'}</div>
+                            <div class="text-slate-500 text-[11px] font-medium mt-0.5">${r.phone_number || ''}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-slate-800 font-bold">${r.equipment_type || '-'}</div>
+                            <div class="text-slate-500 text-[11px] font-medium mt-0.5 max-w-[180px] truncate" title="${r.problem_desc || ''}">${r.problem_desc || ''}</div>
+                        </td>
                         <td class="px-5 py-4 text-center"><span class="${statusClass}">${statusText}</span></td>
-                        <td class="px-5 py-4 text-slate-500 font-medium">${r.created_at_fmt}</td>
                     </tr>`;
                 });
             }
-            document.getElementById('historyModalTitle').innerText = fullName;
+            document.getElementById('historyModalTitle').innerText = (type === 'technician' ? 'ประวัติงานช่าง: ' : 'ประวัติการแจ้งซ่อม: ') + fullName;
             toggleModal('historyModal');
         }
 
