@@ -35,6 +35,17 @@ $conn->query("CREATE TABLE IF NOT EXISTS assets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
+// ป้องกัน Error 500 กรณีไม่มีตาราง technicians
+$conn->query("CREATE TABLE IF NOT EXISTS technicians (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NULL,
+    phone VARCHAR(50) NULL,
+    avatar_url VARCHAR(255) NULL,
+    status VARCHAR(50) DEFAULT 'ว่าง',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
 $conn->query("CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
@@ -45,14 +56,21 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
 )");
 
 $conn->query("ALTER TABLE users MODIFY COLUMN role VARCHAR(50) DEFAULT 'User'");
+
 $check_fullname = $conn->query("SHOW COLUMNS FROM users LIKE 'full_name'");
-if($check_fullname && $check_fullname->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
+if($check_fullname && $check_fullname->num_rows == 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
+}
 
 $check_phone = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
-if($check_phone && $check_phone->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
+if($check_phone && $check_phone->num_rows == 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
+}
 
 $check_dept = $conn->query("SHOW COLUMNS FROM users LIKE 'department'");
-if($check_dept && $check_dept->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN department VARCHAR(100) NULL AFTER phone");
+if($check_dept && $check_dept->num_rows == 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN department VARCHAR(100) NULL AFTER phone");
+}
 
 $check_pwd = $conn->query("SHOW COLUMNS FROM users LIKE 'password'");
 if($check_pwd && $check_pwd->num_rows == 0) {
@@ -60,20 +78,22 @@ if($check_pwd && $check_pwd->num_rows == 0) {
 }
 
 $check_created = $conn->query("SHOW COLUMNS FROM users LIKE 'created_at'");
-if($check_created && $check_created->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-
-$check_tech_name = $conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'");
-if($check_tech_name && $check_tech_name->num_rows == 0) {
-    $conn->query("ALTER TABLE repairs ADD COLUMN technician_name VARCHAR(100) NULL");
+if($check_created && $check_created->num_rows == 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 }
 
-$check_root_cause = $conn->query("SHOW COLUMNS FROM repairs LIKE 'root_cause'");
-if($check_root_cause && $check_root_cause->num_rows == 0) {
-    $conn->query("ALTER TABLE repairs ADD COLUMN root_cause TEXT NULL");
-}
+$check_repairs_table = $conn->query("SHOW TABLES LIKE 'repairs'");
+if($check_repairs_table && $check_repairs_table->num_rows > 0) {
+    $check_tech_name = $conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'");
+    if($check_tech_name && $check_tech_name->num_rows == 0) {
+        $conn->query("ALTER TABLE repairs ADD COLUMN technician_name VARCHAR(100) NULL");
+    }
 
-$check_repairs = $conn->query("SHOW TABLES LIKE 'repairs'");
-if($check_repairs && $check_repairs->num_rows > 0) {
+    $check_root_cause = $conn->query("SHOW COLUMNS FROM repairs LIKE 'root_cause'");
+    if($check_root_cause && $check_root_cause->num_rows == 0) {
+        $conn->query("ALTER TABLE repairs ADD COLUMN root_cause TEXT NULL");
+    }
+
     $conn->query("INSERT INTO users (username, full_name, phone, department, role) 
                   SELECT CONCAT('U', REPLACE(phone_number, '-', '')), reporter_name, phone_number, 'บุคลากรทั่วไป', 'User' 
                   FROM repairs 
@@ -81,7 +101,14 @@ if($check_repairs && $check_repairs->num_rows > 0) {
                   GROUP BY reporter_name, phone_number");
 }
 
-$has_image_col = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'image_path'")->num_rows > 0);
+$has_image_col = false;
+$check_img_table = $conn->query("SHOW TABLES LIKE 'repairs'");
+if($check_img_table && $check_img_table->num_rows > 0) {
+    $res_img = $conn->query("SHOW COLUMNS FROM repairs LIKE 'image_path'");
+    if($res_img && $res_img->num_rows > 0) {
+        $has_image_col = true;
+    }
+}
 
 // ================= จัดการข้อมูล =================
 if (isset($_GET['delete_asset'])) {
@@ -176,17 +203,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 
 // ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
-$check_repairs_table = $conn->query("SHOW TABLES LIKE 'repairs'");
+$check_repairs_list = $conn->query("SHOW TABLES LIKE 'repairs'");
 
-if($check_repairs_table && $check_repairs_table->num_rows > 0) {
+if($check_repairs_list && $check_repairs_list->num_rows > 0) {
     $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
-    $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
-    if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
+    $has_tech_name_col = false;
+    $res_tech_col = $conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'");
+    if($res_tech_col && $res_tech_col->num_rows > 0) $has_tech_name_col = true;
+    
+    if ($has_tech_name_col) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
     if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
     
     $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-    
     $rep_res = $conn->query($select_query);
     $reps = [];
     if($rep_res) {
@@ -478,7 +507,7 @@ if($tech_list_res){
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 <?php
                                 $select_fields = "id, ticket_no, equipment_type, status, problem_desc, reporter_name, phone_number, created_at, completed_at, root_cause";
-                                if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
+                                if ($has_tech_name_col) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
                                 if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
                                 
                                 $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
@@ -660,7 +689,7 @@ if($tech_list_res){
                                                 <td class='px-6 py-4 text-center'><span class='px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600'>{$total_jobs}</span></td>
                                                 <td class='px-6 py-4 text-right'>
                                                     <div class='flex items-center justify-end space-x-2'>
-                                                        <button onclick=\"viewHistory('{$js_fname}', 'technician')\" class='bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm'><i class='fas fa-eye md:mr-1'></i> <span class='hidden md:inline'>View</span></button>
+                                                        <button onclick=\"viewHistory('{$js_fname}', 'technician')\" class='bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm'><i class='fas fa-eye md:mr-1'><span> <span class='hidden md:inline'>View</span></button>
                                                         <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_uname', '$js_fname', '$js_phone', '$js_dept')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
                                                         <button onclick=\"confirmDelete('user', {$t['id']})\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center'><i class='fas fa-trash-alt'></i></button>
                                                     </div>
