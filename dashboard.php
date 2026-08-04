@@ -1,12 +1,14 @@
 <?php 
 session_start();
 
+// 1. เช็คว่าได้ล็อกอินเข้ามาหรือยัง? 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
 
+// 2. ป้องกันผู้บริหาร (Executive) แอบเข้ามาดูหน้าจัดการช่าง
 if (strtolower($_SESSION['role']) === 'executive') {
     header("Location: executive_dashboard.php");
     exit();
@@ -14,6 +16,7 @@ if (strtolower($_SESSION['role']) === 'executive') {
 
 include 'db_connect.php';
 
+// ================= ฟังก์ชันแปลงตัวเลขเป็นเลขไทย =================
 function thaiNum($num) {
     return str_replace(
         array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
@@ -22,6 +25,7 @@ function thaiNum($num) {
     );
 }
 
+// ================= ปรับปรุงฐานข้อมูลอัตโนมัติ (Auto-Fix DB) =================
 $conn->query("CREATE TABLE IF NOT EXISTS assets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     asset_code VARCHAR(50) NOT NULL,
@@ -79,6 +83,7 @@ if($check_repairs && $check_repairs->num_rows > 0) {
 
 $has_image_col = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'image_path'")->num_rows > 0);
 
+// ================= จัดการข้อมูล =================
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
     $conn->query("DELETE FROM assets WHERE id = $del_id");
@@ -171,11 +176,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 
 // ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
+$check_repairs_table = $conn->query("SHOW TABLES LIKE 'repairs'");
 
-// ป้องกัน Error กรณีตัวแปรเช็คตารางยังไม่ถูกสร้าง
-$check_repairs = $conn->query("SHOW TABLES LIKE 'repairs'");
-
-if($check_repairs && $check_repairs->num_rows > 0) {
+if($check_repairs_table && $check_repairs_table->num_rows > 0) {
     $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
@@ -192,6 +195,7 @@ if($check_repairs && $check_repairs->num_rows > 0) {
     }
 }
 
+// ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown (เฉพาะ Technician)
 $tech_options = [];
 $tech_list_res = $conn->query("SELECT DISTINCT full_name FROM users WHERE LOWER(role) = 'technician' AND full_name IS NOT NULL AND full_name != '' ORDER BY full_name ASC");
 if($tech_list_res){
@@ -239,6 +243,7 @@ if($tech_list_res){
 
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
 
+    <!-- Sidebar สีขาว มินิมอล -->
     <aside id="sidebar" class="bg-white flex flex-col shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 border-r border-slate-100 no-print">
         <div class="sidebar-logo-box flex items-center border-b border-slate-50">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mr-3 shrink-0">
@@ -269,6 +274,7 @@ if($tech_list_res){
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[#f8fafc]">
         
+        <!-- Header สีขาว มินิมอล -->
         <header class="top-header bg-white/80 backdrop-blur-md flex items-center justify-between z-10 sticky top-0 no-print border-b border-slate-100">
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="md:hidden mr-4 text-slate-500 hover:text-indigo-600 focus:outline-none">
@@ -294,6 +300,7 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
+            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -352,6 +359,7 @@ if($tech_list_res){
                     </div>
                 </div>
 
+                <!-- แถวที่ 2: กราฟ -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 modern-card p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-6">
@@ -377,6 +385,7 @@ if($tech_list_res){
                     </div>
                 </div>
 
+                <!-- แถวที่ 3: ตาราง Recent Transactions บนหน้า Overview -->
                 <div class="grid grid-cols-1 gap-6">
                     <div class="modern-card overflow-hidden flex flex-col">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -390,46 +399,44 @@ if($tech_list_res){
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left whitespace-nowrap">
-                                <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
+                                <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold">
                                     <tr>
-                                        <th class="px-5 py-4">Date / Time</th>
-                                        <th class="px-5 py-4">Ticket No.</th>
-                                        <th class="px-5 py-4">Reporter</th>
-                                        <th class="px-5 py-4">Equipment</th>
-                                        <th class="px-5 py-4 text-center">Status</th>
+                                        <th class="px-6 py-4">Ticket No.</th>
+                                        <th class="px-6 py-4">Reporter</th>
+                                        <th class="px-6 py-4">Equipment</th>
+                                        <th class="px-6 py-4 text-center">Status</th>
+                                        <th class="px-6 py-4 text-right">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm divide-y divide-slate-100">
                                     <?php
-                                    if($check_repairs && $check_repairs->num_rows > 0) {
-                                        $recent_dash = $conn->query("SELECT * FROM repairs ORDER BY created_at DESC LIMIT 5");
-                                        if($recent_dash && $recent_dash->num_rows > 0){
-                                            while($rd = $recent_dash->fetch_assoc()) {
-                                                $stClass = ($rd['status'] == 'รอรับเรื่อง') ? 'badge-pending' : (($rd['status'] == 'กำลังดำเนินการ') ? 'badge-progress' : 'badge-success');
-                                                $statusText = ($rd['status'] == 'รอรับเรื่อง') ? 'Pending' : (($rd['status'] == 'กำลังดำเนินการ') ? 'In Progress' : 'Completed');
-                                                $date_fmt = date("Y-m-d", strtotime($rd['created_at']));
-                                                
-                                                $imageIcon = "";
-                                                if($has_image_col && !empty($rd['image_path'])) {
-                                                    $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
-                                                }
-                                                
-                                                echo "<tr class='hover:bg-slate-50/50 transition-colors'>
-                                                    <td class='px-6 py-4 text-slate-500 font-mono font-semibold'>{$rd['ticket_no']}</td>
-                                                    <td class='px-6 py-4 text-slate-800 font-bold'>
-                                                        <div class='flex items-center'>
-                                                            <div class='w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 mr-3 text-xs'><i class='fas fa-user'></i></div>
-                                                            {$rd['reporter_name']}
-                                                        </div>
-                                                    </td>
-                                                    <td class='px-6 py-4 text-slate-600 font-medium'>{$rd['equipment_type']} {$imageIcon}</td>
-                                                    <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$statusText}</span></td>
-                                                    <td class='px-6 py-4 text-right text-slate-500 font-medium'>{$date_fmt}</td>
-                                                </tr>";
+                                    $recent_dash = $conn->query("SELECT * FROM repairs ORDER BY created_at DESC LIMIT 5");
+                                    if($recent_dash && $recent_dash->num_rows > 0){
+                                        while($rd = $recent_dash->fetch_assoc()) {
+                                            $stClass = ($rd['status'] == 'รอรับเรื่อง') ? 'badge-pending' : (($rd['status'] == 'กำลังดำเนินการ') ? 'badge-progress' : 'badge-success');
+                                            $statusText = ($rd['status'] == 'รอรับเรื่อง') ? 'Pending' : (($rd['status'] == 'กำลังดำเนินการ') ? 'In Progress' : 'Completed');
+                                            $date_fmt = date("Y-m-d", strtotime($rd['created_at']));
+                                            
+                                            $imageIcon = "";
+                                            if($has_image_col && !empty($rd['image_path'])) {
+                                                $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
                                             }
-                                        } else {
-                                            echo "<tr><td colspan='5' class='px-6 py-8 text-center text-slate-400'>No transactions found</td></tr>";
+                                            
+                                            echo "<tr class='hover:bg-slate-50/50 transition-colors'>
+                                                <td class='px-6 py-4 text-slate-500 font-mono font-semibold'>{$rd['ticket_no']}</td>
+                                                <td class='px-6 py-4 text-slate-800 font-bold'>
+                                                    <div class='flex items-center'>
+                                                        <div class='w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 mr-3 text-xs'><i class='fas fa-user'></i></div>
+                                                        {$rd['reporter_name']}
+                                                    </div>
+                                                </td>
+                                                <td class='px-6 py-4 text-slate-600 font-medium'>{$rd['equipment_type']} {$imageIcon}</td>
+                                                <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$statusText}</span></td>
+                                                <td class='px-6 py-4 text-right text-slate-500 font-medium'>{$date_fmt}</td>
+                                            </tr>";
                                         }
+                                    } else {
+                                        echo "<tr><td colspan='5' class='px-6 py-8 text-center text-slate-400'>No transactions found</td></tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -439,6 +446,7 @@ if($tech_list_res){
                 </div>
             </div>
 
+            <!-- Repairs Section -->
             <div id="repairs" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -469,76 +477,74 @@ if($tech_list_res){
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 <?php
-                                if($check_repairs && $check_repairs->num_rows > 0) {
-                                    $select_fields = "id, ticket_no, equipment_type, status, problem_desc, reporter_name, phone_number, created_at, completed_at, root_cause";
-                                    if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
-                                    if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
-                                    
-                                    $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-                                    $res = $conn->query($select_query);
-                                    if($res && $res->num_rows > 0){
-                                        while($row = $res->fetch_assoc()) {
-                                            $stClass = ($row['status'] == 'รอรับเรื่อง') ? 'badge-pending' : (($row['status'] == 'กำลังดำเนินการ') ? 'badge-progress' : 'badge-success');
-                                            $techName = !empty($row['technician_name']) ? "<div class='text-indigo-600 font-bold'>{$row['technician_name']}</div>" : "<span class='text-slate-400'>Unassigned</span>";
+                                $select_fields = "id, ticket_no, equipment_type, status, problem_desc, reporter_name, phone_number, created_at, completed_at, root_cause";
+                                if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
+                                if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
+                                
+                                $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
+                                $res = $conn->query($select_query);
+                                if($res && $res->num_rows > 0){
+                                    while($row = $res->fetch_assoc()) {
+                                        $stClass = ($row['status'] == 'รอรับเรื่อง') ? 'badge-pending' : (($row['status'] == 'กำลังดำเนินการ') ? 'badge-progress' : 'badge-success');
+                                        $techName = !empty($row['technician_name']) ? "<div class='text-indigo-600 font-bold'>{$row['technician_name']}</div>" : "<span class='text-slate-400'>Unassigned</span>";
 
-                                            $created_date = !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : '-';
-                                            $created_time = !empty($row['created_at']) ? date('H:i', strtotime($row['created_at'])) : '';
+                                        $created_date = !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : '-';
+                                        $created_time = !empty($row['created_at']) ? date('H:i', strtotime($row['created_at'])) : '';
 
-                                            $has_received = (!empty($row['created_at']) && $row['created_at'] != '0000-00-00 00:00:00');
-                                            $received_date = $has_received ? date('Y-m-d', strtotime($row['created_at'])) : '-';
-                                            $received_time = $has_received ? date('H:i', strtotime($row['created_at'])) : '';
+                                        $has_received = (!empty($row['created_at']) && $row['created_at'] != '0000-00-00 00:00:00');
+                                        $received_date = $has_received ? date('Y-m-d', strtotime($row['created_at'])) : '-';
+                                        $received_time = $has_received ? date('H:i', strtotime($row['created_at'])) : '';
 
-                                            $has_completed = (!empty($row['completed_at']) && $row['completed_at'] != '0000-00-00 00:00:00');
-                                            $completed_date = $has_completed ? date('Y-m-d', strtotime($row['completed_at'])) : '-';
-                                            $completed_time = $has_completed ? date('H:i', strtotime($row['completed_at'])) : '';
+                                        $has_completed = (!empty($row['completed_at']) && $row['completed_at'] != '0000-00-00 00:00:00');
+                                        $completed_date = $has_completed ? date('Y-m-d', strtotime($row['completed_at'])) : '-';
+                                        $completed_time = $has_completed ? date('H:i', strtotime($row['completed_at'])) : '';
 
-                                            $rootCause = !empty($row['root_cause']) ? "<span class='text-slate-700 font-medium'>{$row['root_cause']}</span>" : "<span class='text-rose-500 font-bold'>-</span>";
+                                        $rootCause = !empty($row['root_cause']) ? "<span class='text-slate-700 font-medium'>{$row['root_cause']}</span>" : "<span class='text-rose-500 font-bold'>-</span>";
 
-                                            $imageIcon = "";
-                                            if($has_image_col && !empty($row['image_path'])) {
-                                                $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
-                                            }
-
-                                            echo "<tr class='hover:bg-slate-50/50 transition-colors'>
-                                                <td class='px-6 py-4 text-xs whitespace-nowrap'>
-                                                    <div class='font-medium text-slate-700'>{$created_date}</div>
-                                                    <div class='text-[11px] text-slate-400 font-semibold'>{$created_time}</div>
-                                                </td>
-                                                <td class='px-6 py-4 font-mono font-semibold text-slate-600'>{$row['ticket_no']}</td>
-                                                <td class='px-6 py-4'><div class='text-slate-800 font-bold'>{$row['reporter_name']}</div><div class='text-slate-500 text-[11px] font-medium mt-0.5'>{$row['phone_number']}</div></td>
-                                                <td class='px-6 py-4'>
-                                                    <div class='text-slate-800 font-bold'>{$row['equipment_type']} {$imageIcon}</div>
-                                                    <div class='text-slate-500 text-[11px] font-medium mt-0.5 max-w-[150px] truncate' title='{$row['problem_desc']}'>{$row['problem_desc']}</div>
-                                                </td>
-                                                <td class='px-6 py-4'>{$techName}</td>
-                                                <td class='px-6 py-4'>{$rootCause}</td>
-                                                <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                                if($has_received) {
-                                                    echo "<div class='font-medium text-slate-700'>{$received_date}</div>
-                                                          <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
-                                                } else {
-                                                    echo "<span class='text-slate-400'>-</span>";
-                                                }
-                                            echo "</td>
-                                                <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                                if($has_completed) {
-                                                    echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
-                                                          <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
-                                                } else {
-                                                    echo "<span class='text-slate-400'>-</span>";
-                                                }
-                                            echo "</td>
-                                                <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$row['status']}</span></td>
-                                                <td class='px-6 py-4 text-right'>
-                                                    <div class='flex items-center justify-end space-x-2'>
-                                                        <a href='update_repair.php?id={$row['id']}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='Edit'><i class='fas fa-pen-to-square'></i></a>
-                                                        <a href='view_repair.php?id={$row['id']}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='View'><i class='fas fa-eye'></i></a>
-                                                    </div>
-                                                </td>
-                                            </tr>";
+                                        $imageIcon = "";
+                                        if($has_image_col && !empty($row['image_path'])) {
+                                            $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
                                         }
-                                    } else { echo "<tr><td colspan='10' class='px-6 py-16 text-center text-slate-400 font-medium'>No records found</td></tr>"; }
-                                }
+
+                                        echo "<tr class='hover:bg-slate-50/50 transition-colors'>
+                                            <td class='px-6 py-4 text-xs whitespace-nowrap'>
+                                                <div class='font-medium text-slate-700'>{$created_date}</div>
+                                                <div class='text-[11px] text-slate-400 font-semibold'>{$created_time}</div>
+                                            </td>
+                                            <td class='px-6 py-4 font-mono font-semibold text-slate-600'>{$row['ticket_no']}</td>
+                                            <td class='px-6 py-4'><div class='text-slate-800 font-bold'>{$row['reporter_name']}</div><div class='text-slate-500 text-[11px] font-medium mt-0.5'>{$row['phone_number']}</div></td>
+                                            <td class='px-6 py-4'>
+                                                <div class='text-slate-800 font-bold'>{$row['equipment_type']} {$imageIcon}</div>
+                                                <div class='text-slate-500 text-[11px] font-medium mt-0.5 max-w-[150px] truncate' title='{$row['problem_desc']}'>{$row['problem_desc']}</div>
+                                            </td>
+                                            <td class='px-6 py-4'>{$techName}</td>
+                                            <td class='px-6 py-4'>{$rootCause}</td>
+                                            <td class='px-6 py-4 text-xs whitespace-nowrap'>";
+                                            if($has_received) {
+                                                echo "<div class='font-medium text-slate-700'>{$received_date}</div>
+                                                      <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
+                                            } else {
+                                                echo "<span class='text-slate-400'>-</span>";
+                                            }
+                                        echo "</td>
+                                            <td class='px-6 py-4 text-xs whitespace-nowrap'>";
+                                            if($has_completed) {
+                                                echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
+                                                      <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
+                                            } else {
+                                                echo "<span class='text-slate-400'>-</span>";
+                                            }
+                                        echo "</td>
+                                            <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$row['status']}</span></td>
+                                            <td class='px-6 py-4 text-right'>
+                                                <div class='flex items-center justify-end space-x-2'>
+                                                    <a href='update_repair.php?id={$row['id']}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='Edit'><i class='fas fa-pen-to-square'></i></a>
+                                                    <a href='view_repair.php?id={$row['id']}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='View'><i class='fas fa-eye'></i></a>
+                                                </div>
+                                            </td>
+                                        </tr>";
+                                    }
+                                } else { echo "<tr><td colspan='10' class='px-6 py-16 text-center text-slate-400 font-medium'>No records found</td></tr>"; }
                                 ?>
                             </tbody>
                         </table>
@@ -546,6 +552,7 @@ if($tech_list_res){
                 </div>
             </div>
 
+            <!-- Team Section (จัดการระบบ) -->
             <div id="technicians" class="section hidden space-y-6 no-print">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
@@ -669,6 +676,7 @@ if($tech_list_res){
                 </div>
             </div>
 
+            <!-- Technician Cards Section -->
             <div id="team_cards" class="section hidden space-y-8 no-print">
                 <div>
                     <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Team Management (ทีมช่างผู้ดูแล)</h2>
@@ -748,6 +756,7 @@ if($tech_list_res){
                 <?php endforeach; ?>
             </div>
 
+            <!-- Asset Management -->
             <div id="assets" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden flex flex-col">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -797,6 +806,7 @@ if($tech_list_res){
                 </div>
             </div>
 
+            <!-- Users Section -->
             <div id="users" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden flex flex-col">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -852,6 +862,7 @@ if($tech_list_res){
                 </div>
             </div>
 
+            <!-- Report Summary Section -->
             <div id="reports" class="section hidden space-y-6 no-print">
                 <div class="modern-card p-6 md:p-8">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -885,6 +896,8 @@ if($tech_list_res){
 
         </div>
     </main>
+
+    <!-- ================== MODALS ================== -->
 
     <div id="assetModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('assetModal')"></div>
@@ -1019,6 +1032,7 @@ if($tech_list_res){
         </div>
     </div>
 
+    <!-- ================== JAVASCRIPT ================== -->
     <script>
         const allRepairs = <?php echo $all_repairs_json; ?>;
         
@@ -1276,7 +1290,7 @@ if($tech_list_res){
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
-
+            
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
@@ -1285,7 +1299,7 @@ if($tech_list_res){
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
-
+                    
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
                     let createdDate = '-';
