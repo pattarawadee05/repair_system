@@ -73,7 +73,7 @@ if($check_root_cause->num_rows == 0) {
 }
 
 $check_repairs = $conn->query("SHOW TABLES LIKE 'repairs'");
-if($check_repairs->num_rows > 0) {
+if($check_repairs && $check_repairs->num_rows > 0) {
     $conn->query("INSERT INTO users (username, full_name, phone, department, role) 
                   SELECT CONCAT('U', REPLACE(phone_number, '-', '')), reporter_name, phone_number, 'บุคลากรทั่วไป', 'User' 
                   FROM repairs 
@@ -177,7 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 // ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
 
-if($check_repairs->num_rows > 0) {
+if($check_repairs && $check_repairs->num_rows > 0) {
     $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
@@ -455,7 +455,7 @@ if($tech_list_res){
                                 </thead>
                                 <tbody class="text-sm divide-y divide-slate-100">
                                     <?php
-                                    if($check_repairs->num_rows > 0) {
+                                    if($check_repairs && $check_repairs->num_rows > 0) {
                                         $recent_dash = $conn->query("SELECT * FROM repairs ORDER BY created_at DESC LIMIT 5");
                                         if($recent_dash && $recent_dash->num_rows > 0){
                                             while($rd = $recent_dash->fetch_assoc()) {
@@ -524,7 +524,7 @@ if($tech_list_res){
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 <?php
-                                if($check_repairs->num_rows > 0) {
+                                if($check_repairs && $check_repairs->num_rows > 0) {
                                     $select_fields = "id, ticket_no, equipment_type, status, problem_desc, reporter_name, phone_number, created_at, completed_at, root_cause";
                                     if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
                                     if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
@@ -1337,12 +1337,12 @@ if($tech_list_res){
             document.getElementById('edit_rep_old_name').value = old_name; document.getElementById('edit_rep_new_name').value = old_name; document.getElementById('edit_rep_new_phone').value = old_phone; toggleModal('editReporterModal');
         }
 
-        // ฟังก์ชันประวัติงาน (ปรับปรุงใหม่ให้ดึงข้อมูลครบถ้วนและแสดง Date/Time ไว้หน้าสุด)
+        // ฟังก์ชันประวัติงานช่าง/ผู้แจ้ง
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
-
+            
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
@@ -1351,7 +1351,7 @@ if($tech_list_res){
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
-
+                    
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
                     let createdDate = '-';
