@@ -169,7 +169,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
     echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลผู้แจ้งสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
 }
 
+// ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
+
+// ป้องกัน Error กรณีตัวแปรเช็คตารางยังไม่ถูกสร้าง
+$check_repairs = $conn->query("SHOW TABLES LIKE 'repairs'");
+
 if($check_repairs && $check_repairs->num_rows > 0) {
     $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
@@ -178,6 +183,7 @@ if($check_repairs && $check_repairs->num_rows > 0) {
     if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
     
     $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
+    
     $rep_res = $conn->query($select_query);
     $reps = [];
     if($rep_res) {
@@ -384,13 +390,13 @@ if($tech_list_res){
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left whitespace-nowrap">
-                                <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold">
+                                <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
                                     <tr>
-                                        <th class="px-6 py-4">Ticket No.</th>
-                                        <th class="px-6 py-4">Reporter</th>
-                                        <th class="px-6 py-4">Equipment</th>
-                                        <th class="px-6 py-4 text-center">Status</th>
-                                        <th class="px-6 py-4 text-right">Date</th>
+                                        <th class="px-5 py-4">Date / Time</th>
+                                        <th class="px-5 py-4">Ticket No.</th>
+                                        <th class="px-5 py-4">Reporter</th>
+                                        <th class="px-5 py-4">Equipment</th>
+                                        <th class="px-5 py-4 text-center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm divide-y divide-slate-100">
@@ -1269,12 +1275,8 @@ if($tech_list_res){
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
-            
-            // ดึงข้อมูลประวัติจากตัวแปรกลางของหน้าเว็บ (ใช้ข้อมูลทั้งหมดที่มีอยู่แล้ว)
-            let repairsData = window.allRepairs || [];
-            
-            const userRepairs = repairsData.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
-            
+            const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
+
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
@@ -1283,7 +1285,7 @@ if($tech_list_res){
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
-                    
+
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
                     let createdDate = '-';
