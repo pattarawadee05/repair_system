@@ -1380,7 +1380,7 @@ if($tech_list_res){
                     </tr>`;
                 });
             }
-            document.getElementById('historyModalTitle').innerText = (type === 'technician' ? 'ประวัติงานช่าง: ' : 'ประวัติการแจ้งซ่อม: ') + fullName;
+            document.getElementById('historyModalTitleinnerText') = (type === 'technician' ? 'ประวัติงานช่าง: ' : 'ประวัติการแจ้งซ่อม: ') + fullName;
             toggleModal('historyModal');
         }
 
