@@ -1,14 +1,12 @@
 <?php 
 session_start();
 
-// 1. เช็คว่าได้ล็อกอินเข้ามาหรือยัง? 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
 
-// 2. ป้องกันผู้บริหาร (Executive) แอบเข้ามาดูหน้าจัดการช่าง
 if (strtolower($_SESSION['role']) === 'executive') {
     header("Location: executive_dashboard.php");
     exit();
@@ -16,7 +14,6 @@ if (strtolower($_SESSION['role']) === 'executive') {
 
 include 'db_connect.php';
 
-// ================= ฟังก์ชันแปลงตัวเลขเป็นเลขไทย =================
 function thaiNum($num) {
     return str_replace(
         array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
@@ -25,7 +22,6 @@ function thaiNum($num) {
     );
 }
 
-// ================= ปรับปรุงฐานข้อมูลอัตโนมัติ (Auto-Fix DB) =================
 $conn->query("CREATE TABLE IF NOT EXISTS assets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     asset_code VARCHAR(50) NOT NULL,
@@ -46,29 +42,29 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
 
 $conn->query("ALTER TABLE users MODIFY COLUMN role VARCHAR(50) DEFAULT 'User'");
 $check_fullname = $conn->query("SHOW COLUMNS FROM users LIKE 'full_name'");
-if($check_fullname->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
+if($check_fullname && $check_fullname->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
 
 $check_phone = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
-if($check_phone->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
+if($check_phone && $check_phone->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
 
 $check_dept = $conn->query("SHOW COLUMNS FROM users LIKE 'department'");
-if($check_dept->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN department VARCHAR(100) NULL AFTER phone");
+if($check_dept && $check_dept->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN department VARCHAR(100) NULL AFTER phone");
 
 $check_pwd = $conn->query("SHOW COLUMNS FROM users LIKE 'password'");
-if($check_pwd->num_rows == 0) {
+if($check_pwd && $check_pwd->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN password VARCHAR(255) NULL AFTER username");
 }
 
 $check_created = $conn->query("SHOW COLUMNS FROM users LIKE 'created_at'");
-if($check_created->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+if($check_created && $check_created->num_rows == 0) $conn->query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
 $check_tech_name = $conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'");
-if($check_tech_name->num_rows == 0) {
+if($check_tech_name && $check_tech_name->num_rows == 0) {
     $conn->query("ALTER TABLE repairs ADD COLUMN technician_name VARCHAR(100) NULL");
 }
 
 $check_root_cause = $conn->query("SHOW COLUMNS FROM repairs LIKE 'root_cause'");
-if($check_root_cause->num_rows == 0) {
+if($check_root_cause && $check_root_cause->num_rows == 0) {
     $conn->query("ALTER TABLE repairs ADD COLUMN root_cause TEXT NULL");
 }
 
@@ -83,7 +79,6 @@ if($check_repairs && $check_repairs->num_rows > 0) {
 
 $has_image_col = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'image_path'")->num_rows > 0);
 
-// ================= จัดการข้อมูล =================
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
     $conn->query("DELETE FROM assets WHERE id = $del_id");
@@ -174,9 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
     echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลผู้แจ้งสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
 }
 
-// ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
-
 if($check_repairs && $check_repairs->num_rows > 0) {
     $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
@@ -185,7 +178,6 @@ if($check_repairs && $check_repairs->num_rows > 0) {
     if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
     
     $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-    
     $rep_res = $conn->query($select_query);
     $reps = [];
     if($rep_res) {
@@ -194,7 +186,6 @@ if($check_repairs && $check_repairs->num_rows > 0) {
     }
 }
 
-// ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown (เฉพาะ Technician)
 $tech_options = [];
 $tech_list_res = $conn->query("SELECT DISTINCT full_name FROM users WHERE LOWER(role) = 'technician' AND full_name IS NOT NULL AND full_name != '' ORDER BY full_name ASC");
 if($tech_list_res){
@@ -216,79 +207,32 @@ if($tech_list_res){
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', 'Kanit', sans-serif; 
-            background-color: #f8fafc; 
-            color: #1e293b; 
-        }
-        
-        .modern-card { 
-            background: #ffffff; 
-            border-radius: 20px; 
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); 
-            border: 1px solid #f1f5f9; 
-        }
-
-        #sidebar {
-            width: 240px !important;
-            min-width: 240px !important;
-            max-width: 240px !important;
-        }
-
-        .sidebar-logo-box {
-            height: 88px !important;
-            padding: 0 24px !important;
-        }
-
-        .top-header {
-            height: 88px !important;
-            padding: 0 32px !important;
-        }
-        
-        .nav-btn { 
-            width: calc(100% - 32px) !important; 
-            display: flex !important; 
-            align-items: center !important; 
-            padding: 0.65rem 1rem !important; 
-            margin: 2px 16px !important; 
-            border-radius: 12px !important; 
-            color: #64748b !important; 
-            font-weight: 600 !important; 
-            font-size: 0.875rem !important;
-            transition: all 0.2s ease !important; 
-            cursor: pointer !important;
-        }
+        body { font-family: 'Plus Jakarta Sans', 'Kanit', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .modern-card { background: #ffffff; border-radius: 20px; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9; }
+        #sidebar { width: 240px !important; min-width: 240px !important; max-width: 240px !important; }
+        .sidebar-logo-box { height: 88px !important; padding: 0 24px !important; }
+        .top-header { height: 88px !important; padding: 0 32px !important; }
+        .nav-btn { width: calc(100% - 32px) !important; display: flex !important; align-items: center !important; padding: 0.65rem 1rem !important; margin: 2px 16px !important; border-radius: 12px !important; color: #64748b !important; font-weight: 600 !important; font-size: 0.875rem !important; transition: all 0.2s ease !important; cursor: pointer !important; }
         .nav-btn i { width: 1.5rem !important; text-align: center !important; font-size: 1rem !important; margin-right: 0.75rem !important; color: #94a3b8 !important; }
         .nav-btn:hover { background-color: #f8fafc !important; color: #4f46e5 !important; }
         .nav-btn:hover i { color: #4f46e5 !important; }
-        
-        .active-btn { 
-            background-color: #eef2ff !important; 
-            color: #4f46e5 !important; 
-            font-weight: 700 !important; 
-        }
+        .active-btn { background-color: #eef2ff !important; color: #4f46e5 !important; font-weight: 700 !important; }
         .active-btn i { color: #4f46e5 !important; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
-        
         .badge-pending { background-color: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .badge-progress { background-color: #e0e7ff; color: #4f46e5; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .badge-success { background-color: #d1fae5; color: #059669; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-
-        @media print {
-            aside, header, .no-print, #sidebarOverlay, #dash, #repairs, #technicians, #team_cards, #assets, #users, #reports { display: none !important; }
-        }
+        @media print { aside, header, .no-print, #sidebarOverlay, #dash, #repairs, #technicians, #team_cards, #assets, #users, #reports { display: none !important; } }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden selection:bg-indigo-100">
 
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar สีขาว มินิมอล -->
     <aside id="sidebar" class="bg-white flex flex-col shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 border-r border-slate-100 no-print">
         <div class="sidebar-logo-box flex items-center border-b border-slate-50">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mr-3 shrink-0">
@@ -319,7 +263,6 @@ if($tech_list_res){
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[#f8fafc]">
         
-        <!-- Header สีขาว มินิมอล -->
         <header class="top-header bg-white/80 backdrop-blur-md flex items-center justify-between z-10 sticky top-0 no-print border-b border-slate-100">
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="md:hidden mr-4 text-slate-500 hover:text-indigo-600 focus:outline-none">
@@ -345,7 +288,6 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
-            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -404,7 +346,6 @@ if($tech_list_res){
                     </div>
                 </div>
 
-                <!-- แถวที่ 2: กราฟ -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 modern-card p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-6">
@@ -430,7 +371,6 @@ if($tech_list_res){
                     </div>
                 </div>
 
-                <!-- แถวที่ 3: ตาราง Recent Transactions บนหน้า Overview -->
                 <div class="grid grid-cols-1 gap-6">
                     <div class="modern-card overflow-hidden flex flex-col">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -493,7 +433,6 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Repairs Section -->
             <div id="repairs" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -530,7 +469,6 @@ if($tech_list_res){
                                     if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
                                     
                                     $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-                                    
                                     $res = $conn->query($select_query);
                                     if($res && $res->num_rows > 0){
                                         while($row = $res->fetch_assoc()) {
@@ -602,7 +540,6 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Team Section (จัดการระบบ) -->
             <div id="technicians" class="section hidden space-y-6 no-print">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
@@ -726,7 +663,6 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Technician Cards Section -->
             <div id="team_cards" class="section hidden space-y-8 no-print">
                 <div>
                     <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Team Management (ทีมช่างผู้ดูแล)</h2>
@@ -806,7 +742,6 @@ if($tech_list_res){
                 <?php endforeach; ?>
             </div>
 
-            <!-- Asset Management -->
             <div id="assets" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden flex flex-col">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -856,7 +791,6 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Users Section -->
             <div id="users" class="section hidden space-y-6 no-print">
                 <div class="modern-card overflow-hidden flex flex-col">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -912,7 +846,6 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Report Summary Section -->
             <div id="reports" class="section hidden space-y-6 no-print">
                 <div class="modern-card p-6 md:p-8">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -946,8 +879,6 @@ if($tech_list_res){
 
         </div>
     </main>
-
-    <!-- ================== MODALS ================== -->
 
     <div id="assetModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('assetModal')"></div>
@@ -1054,7 +985,6 @@ if($tech_list_res){
         </div>
     </div>
 
-    <!-- Modal ประวัติงาน -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
         <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
@@ -1082,7 +1012,6 @@ if($tech_list_res){
         </div>
     </div>
 
-    <!-- ================== JAVASCRIPT ================== -->
     <script>
         const allRepairs = <?php echo $all_repairs_json; ?>;
         
@@ -1163,7 +1092,6 @@ if($tech_list_res){
 
         function filterRepairs(statusStr) {
             show('repairs');
-            
             setTimeout(() => {
                 let searchInput = document.getElementById('searchInput');
                 if(searchInput) {
@@ -1337,7 +1265,6 @@ if($tech_list_res){
             document.getElementById('edit_rep_old_name').value = old_name; document.getElementById('edit_rep_new_name').value = old_name; document.getElementById('edit_rep_new_phone').value = old_phone; toggleModal('editReporterModal');
         }
 
-        // ฟังก์ชันประวัติงานช่าง/ผู้แจ้ง
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
