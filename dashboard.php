@@ -178,7 +178,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 $all_repairs_json = "[]";
 
 if($check_repairs->num_rows > 0) {
-    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at_fmt, created_at, reporter_name";
+    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
     if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
@@ -726,7 +726,7 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Technician Cards Section (แสดงรูป .jpg จริง และซ่อนเบอร์โทรหากไม่มี) -->
+            <!-- Technician Cards Section -->
             <div id="team_cards" class="section hidden space-y-8 no-print">
                 <div>
                     <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Team Management (ทีมช่างผู้ดูแล)</h2>
@@ -1354,15 +1354,13 @@ if($tech_list_res){
                     
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
-                    // แยกวันที่และเวลา
+                    // แยกวันที่และเวลาให้แสดง Date อยู่บน Time อยู่ล่าง
                     let createdDate = '-';
                     let createdTime = '';
                     if(r.created_at) {
                         let parts = r.created_at.split(' ');
                         createdDate = parts[0] || '-';
                         createdTime = parts[1] ? parts[1].substring(0, 5) : '';
-                    } else if(r.created_at_fmt) {
-                        createdDate = r.created_at_fmt;
                     }
 
                     tbody.innerHTML += `<tr class="hover:bg-slate-50/50 transition-colors">
