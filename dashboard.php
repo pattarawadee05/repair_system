@@ -177,21 +177,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 // ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
 
-if($check_repairs->num_rows > 0) {
-    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
-    $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
-    
-    if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
-    if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
-    
-    $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-    
-    $rep_res = $conn->query($select_query);
-    $reps = [];
-    if($rep_res) {
-        while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
-        $all_repairs_json = json_encode($reps);
-    }
+$select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
+$has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
+
+if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
+if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
+
+$select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
+
+$rep_res = $conn->query($select_query);
+$reps = [];
+if($rep_res) {
+    while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
+    $all_repairs_json = json_encode($reps);
 }
 
 // ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown (เฉพาะ Technician)
@@ -1054,7 +1052,7 @@ if($tech_list_res){
         </div>
     </div>
 
-    <!-- Modal ประวัติงาน (ปรับปรุงใหม่: Date/Time อยู่หน้าสุด พร้อมรายละเอียดครบถ้วน) -->
+    <!-- Modal ประวัติงาน -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
         <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
