@@ -178,7 +178,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 $all_repairs_json = "[]";
 
 if($check_repairs->num_rows > 0) {
-    $select_fields = "ticket_no, equipment_type, status, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at_fmt, created_at, reporter_name";
+    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
     $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
     
     if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
@@ -1054,7 +1054,7 @@ if($tech_list_res){
         </div>
     </div>
 
-    <!-- Modal ประวัติงาน -->
+    <!-- Modal ประวัติงาน (ปรับปรุงเรียงหัวตารางใหม่: Date/Time อยู่หน้าสุด พร้อมรายละเอียดครบถ้วน) -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
         <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
@@ -1337,7 +1337,7 @@ if($tech_list_res){
             document.getElementById('edit_rep_old_name').value = old_name; document.getElementById('edit_rep_new_name').value = old_name; document.getElementById('edit_rep_new_phone').value = old_phone; toggleModal('editReporterModal');
         }
 
-        // ฟังก์ชันประวัติงานช่าง/ผู้แจ้ง (Date/Time อยู่หน้าสุด พร้อมรายละเอียดครบถ้วน)
+        // ฟังก์ชันประวัติงาน (ปรับปรุงใหม่ให้ดึงข้อมูลครบถ้วนและแสดง Date/Time ไว้หน้าสุด)
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
@@ -1354,7 +1354,7 @@ if($tech_list_res){
                     
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
-                    // แยกวันที่และเวลาให้แสดง Date อยู่บน Time อยู่ล่าง
+                    // แยกวันที่และเวลาให้อยู่ในรูปแบบ Date บน Time ล่าง
                     let createdDate = '-';
                     let createdTime = '';
                     if(r.created_at) {
