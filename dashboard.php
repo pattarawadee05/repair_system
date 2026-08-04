@@ -177,19 +177,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
 // ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
 
-$select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
-$has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
-
-if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
-if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
-
-$select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-
-$rep_res = $conn->query($select_query);
-$reps = [];
-if($rep_res) {
-    while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
-    $all_repairs_json = json_encode($reps);
+if($check_repairs->num_rows > 0) {
+    $select_fields = "ticket_no, equipment_type, status, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at_fmt, created_at, reporter_name";
+    $has_tech_name = ($conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'")->num_rows > 0);
+    
+    if ($has_tech_name) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
+    if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
+    
+    $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
+    
+    $rep_res = $conn->query($select_query);
+    $reps = [];
+    if($rep_res) {
+        while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
+        $all_repairs_json = json_encode($reps);
+    }
 }
 
 // ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown (เฉพาะ Technician)
