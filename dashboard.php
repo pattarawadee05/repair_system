@@ -1054,7 +1054,7 @@ if($tech_list_res){
         </div>
     </div>
 
-   <!-- Modal ประวัติงาน -->
+    <!-- Modal ประวัติงาน -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
         <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
@@ -1380,7 +1380,7 @@ if($tech_list_res){
                     </tr>`;
                 });
             }
-            document.getElementById('historyModalTitleinnerText') = (type === 'technician' ? 'ประวัติงานช่าง: ' : 'ประวัติการแจ้งซ่อม: ') + fullName;
+            document.getElementById('historyModalTitle').innerText = (type === 'technician' ? 'ประวัติงานช่าง: ' : 'ประวัติการแจ้งซ่อม: ') + fullName;
             toggleModal('historyModal');
         }
 
