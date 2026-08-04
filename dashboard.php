@@ -1342,7 +1342,7 @@ if($tech_list_res){
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
-            
+
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
@@ -1351,7 +1351,7 @@ if($tech_list_res){
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
-                    
+
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
                     let createdDate = '-';
