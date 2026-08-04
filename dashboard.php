@@ -985,6 +985,7 @@ if($tech_list_res){
         </div>
     </div>
 
+    <!-- Modal ประวัติงาน -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
         <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
@@ -1268,7 +1269,11 @@ if($tech_list_res){
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
-            const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
+            
+            // ดึงข้อมูลประวัติจากตัวแปรกลางของหน้าเว็บ (ใช้ข้อมูลทั้งหมดที่มีอยู่แล้ว)
+            let repairsData = window.allRepairs || [];
+            
+            const userRepairs = repairsData.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
             
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
