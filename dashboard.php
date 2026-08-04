@@ -1318,8 +1318,21 @@ if($tech_list_res){
         function viewHistory(fullName, type) {
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
+
+            // อัปเดตหัวตารางใน Modal ให้ Date / Time มาอยู่หน้าสุดทันทีด้วย JavaScript ปลอดภัย 100%
+            const theadRow = document.querySelector('#historyModal thead tr');
+            if(theadRow) {
+                theadRow.innerHTML = `
+                    <th class="px-5 py-4">Date / Time</th>
+                    <th class="px-5 py-4">Ticket No.</th>
+                    <th class="px-5 py-4">Reporter</th>
+                    <th class="px-5 py-4">Equipment</th>
+                    <th class="px-5 py-4 text-center">Status</th>
+                `;
+            }
+
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
-            
+
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
@@ -1328,7 +1341,7 @@ if($tech_list_res){
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
-                    
+
                     let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
 
                     let createdDate = '-';
