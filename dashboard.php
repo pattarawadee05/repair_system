@@ -1041,7 +1041,7 @@ if($tech_list_res){
                 <p class="text-lg font-extrabold text-slate-800 truncate pr-4" id="historyModalTitle">History</p>
                 <button onclick="toggleModal('historyModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1 bg-white">
+           <div class="p-6 overflow-y-auto flex-1 bg-white">
                 <div class="w-full overflow-x-auto rounded-2xl border border-slate-100 shadow-sm">
                     <table class="w-full text-left whitespace-nowrap min-w-[700px]">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
