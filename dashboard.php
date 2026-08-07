@@ -35,7 +35,6 @@ $conn->query("CREATE TABLE IF NOT EXISTS assets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-// ป้องกัน Error 500 กรณีไม่มีตาราง technicians
 $conn->query("CREATE TABLE IF NOT EXISTS technicians (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
@@ -549,20 +548,20 @@ if($tech_list_res){
                                             <td class='px-6 py-4'>{$techName}</td>
                                             <td class='px-6 py-4'>{$rootCause}</td>
                                             <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                            if($has_received) {
-                                                echo "<div class='font-medium text-slate-700'>{$received_date}</div>
-                                                      <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
-                                            } else {
-                                                echo "<span class='text-slate-400'>-</span>";
-                                            }
+                                        if($has_received) {
+                                            echo "<div class='font-medium text-slate-700'>{$received_date}</div>
+                                                  <div class='text-[11px] text-indigo-600 font-semibold'>{$received_time}</div>";
+                                        } else {
+                                            echo "<span class='text-slate-400'>-</span>";
+                                        }
                                         echo "</td>
                                             <td class='px-6 py-4 text-xs whitespace-nowrap'>";
-                                            if($has_completed) {
-                                                echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
-                                                      <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
-                                            } else {
-                                                echo "<span class='text-slate-400'>-</span>";
-                                            }
+                                        if($has_completed) {
+                                            echo "<div class='font-medium text-emerald-700'>{$completed_date}</div>
+                                                  <div class='text-[11px] text-emerald-500 font-semibold'>{$completed_time}</div>";
+                                        } else {
+                                            echo "<span class='text-slate-400'>-</span>";
+                                        }
                                         echo "</td>
                                             <td class='px-6 py-4 text-center'><span class='{$stClass}'>{$row['status']}</span></td>
                                             <td class='px-6 py-4 text-right'>
@@ -689,7 +688,7 @@ if($tech_list_res){
                                                 <td class='px-6 py-4 text-center'><span class='px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600'>{$total_jobs}</span></td>
                                                 <td class='px-6 py-4 text-right'>
                                                     <div class='flex items-center justify-end space-x-2'>
-                                                        <button onclick=\"viewHistory('{$js_fname}', 'technician')\" class='bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm'><i class='fas fa-eye md:mr-1'><span> <span class='hidden md:inline'>View</span></button>
+                                                        <button onclick=\"viewHistory('{$js_fname}', 'technician')\" class='bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm'><i class='fas fa-eye md:mr-1'></i> <span class='hidden md:inline'>View</span></button>
                                                         <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_uname', '$js_fname', '$js_phone', '$js_dept')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
                                                         <button onclick=\"confirmDelete('user', {$t['id']})\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center'><i class='fas fa-trash-alt'></i></button>
                                                     </div>
@@ -1319,7 +1318,6 @@ if($tech_list_res){
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
 
-            // อัปเดตหัวตารางใน Modal ให้ Date / Time มาอยู่หน้าสุดทันทีด้วย JavaScript ปลอดภัย 100%
             const theadRow = document.querySelector('#historyModal thead tr');
             if(theadRow) {
                 theadRow.innerHTML = `
