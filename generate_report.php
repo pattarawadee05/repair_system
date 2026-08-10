@@ -22,13 +22,37 @@ function getPrefixName($name) {
     if (strpos($name, 'นาย') === 0 || strpos($name, 'นางสาว') === 0 || strpos($name, 'นาง') === 0 || strpos($name, 'ดร.') === 0) {
         return $name;
     }
-    return 'นาย' . $name;
+    return 'นาย ' . $name;
 }
 
 $tech_formal_name = getPrefixName($selected_tech);
 
-// ดึงรายชื่อช่างทั้งหมดจาก DB
-$tech_list = $conn->query("SELECT DISTINCT TRIM(technician_name) as tech_name FROM repairs WHERE technician_name IS NOT NULL AND technician_name != ''");
+// ข้อมูลรายชื่อช่างทั้งหมด (อิงจากไฟล์ dashboard.php)
+$departments_data = [
+    'ฝ่ายงานบริการเทคโนโลยีดิจิทัล' => [
+        'นาย สมพร วงษ์จำปา',
+        'นาย ปริญญา จันทรภา',
+        'นาย ทองสน พลมีศักดิ์',
+        'นาย ธีรศักดิ์ พาโคกทม'
+    ],
+    'ฝ่ายงานโสตทัศนูปกรณ์' => [
+        'นาย จิตรณรงค์ นาใจคง',
+        'นาย ลำไพร ทองบ่อ',
+        'นาย รักชาติ แดงเทโพธิ์',
+        'นาย ปิยะสันต์ บุญพระ',
+        'นาย จตุพล ฤทธิสิงห์',
+        'นาย อาทิตย์ บรรเทา'
+    ],
+    'ฝ่ายงานยานยนต์' => [
+        'นาย ธวัชชัย รัสสมบัติ',
+        'นาย ทรงภพ จันทร์ลอย',
+        'นาย รนภักดี ลิงลม',
+        'นาย กิตติภณ รัดถา',
+        'นาย ทิวา เนื่องทะบาล',
+        'นาย นิรุตติ์ กองเงิน',
+        'นาย อุทัย หาหอม'
+    ]
+];
 
 // เงื่อนไขการค้นหา SQL
 $where_conditions = [];
@@ -177,12 +201,13 @@ $thai_year = $selected_year + 543;
                     <select name="tech" class="bg-white text-[#033495] font-semibold text-xs rounded-xl px-3 py-1.5 border border-sky-200 shadow-sm focus:outline-none">
                         <option value="all" <?php echo $selected_tech === 'all' ? 'selected' : ''; ?>>-- ช่างทุกคน (ภาพรวมคณะ) --</option>
                         <?php 
-                        if($tech_list) {
-                            while($t = $tech_list->fetch_assoc()) {
-                                $t_name = $t['tech_name'];
+                        foreach($departments_data as $dept => $techs) {
+                            echo "<optgroup label='".htmlspecialchars($dept)."'>";
+                            foreach($techs as $t_name) {
                                 $selected = ($selected_tech === $t_name) ? 'selected' : '';
                                 echo "<option value='".htmlspecialchars($t_name)."' $selected>".htmlspecialchars($t_name)."</option>";
                             }
+                            echo "</optgroup>";
                         }
                         ?>
                     </select>
