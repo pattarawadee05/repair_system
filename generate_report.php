@@ -213,16 +213,15 @@ $thai_year = $selected_year + 543;
                 <input type="hidden" name="type" value="<?php echo htmlspecialchars($report_type); ?>">
                 
                 <div>
-                    <!-- อัปเดต Dropdown ใส่สัญลักษณ์และย่อหน้าให้เห็นฝ่ายงานแบบชัดเจน -->
                     <select name="tech" class="bg-white text-[#033495] font-semibold text-xs rounded-xl px-3 py-1.5 border border-sky-200 shadow-sm focus:outline-none">
                         <option value="all" <?php echo $selected_tech === 'all' ? 'selected' : ''; ?>>🌟 ช่างทุกคน (ภาพรวมคณะ)</option>
                         <?php 
                         foreach($departments_data as $dept => $techs) {
-                            echo "<optgroup label='--- 🏢 ".htmlspecialchars($dept)." ---'>";
+                            // เพิ่มสีพื้นหลังให้แยกหมวดหมู่ชัดเจน
+                            echo "<optgroup label='🏢 ".htmlspecialchars($dept)."' style='background-color: #e0e7ff; color: #3730a3; font-weight: bold;'>";
                             foreach($techs as $t_name) {
                                 $selected = ($selected_tech === $t_name) ? 'selected' : '';
-                                // ใส่ &nbsp; เพื่อเว้นวรรคย่อหน้า และใส่ • หน้าชื่อ
-                                echo "<option value='".htmlspecialchars($t_name)."' $selected>&nbsp;&nbsp;&nbsp;• ".htmlspecialchars($t_name)."</option>";
+                                echo "<option value='".htmlspecialchars($t_name)."' $selected style='background-color: #ffffff; color: #1e293b;'>&nbsp;&nbsp;&nbsp;• ".htmlspecialchars($t_name)."</option>";
                             }
                             echo "</optgroup>";
                         }
@@ -272,7 +271,7 @@ $thai_year = $selected_year + 543;
         <div class="text-black pb-10">
             
             <div class="memo-head-box">
-                <img src="img/ตราครุฑ.jpg" alt="ตราครุฑ" class="garuda-img" onerror="this.style.display='none';">
+                <img src="img/garuda.jpg" alt="ตราครุฑ" class="garuda-img" onerror="this.style.display='none';">
                 <div class="memo-head-title">บันทึกข้อความ</div>
             </div>
 
