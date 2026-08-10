@@ -273,7 +273,7 @@ $thai_year = $selected_year + 543;
         <div class="text-black pb-10">
             
             <div class="memo-head-box">
-                <img src="ตราครุฑ.jpg" alt="ตราครุฑ" class="garuda-img" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/84/Garuda_Embroidery.png';">
+                <img src="img/garuda.jpg" alt="ตราครุฑ" class="garuda-img">
                 <div class="memo-head-title">บันทึกข้อความ</div>
             </div>
 
