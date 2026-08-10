@@ -347,11 +347,11 @@ $thai_year = $selected_year + 543;
             </div>
 
             <!-- ส่วนลงชื่อ (รูปแบบ บันทึกข้อความ) -->
-            <div class="mt-16 flex justify-end pr-8">
-                <div class="min-w-[300px] text-center space-y-2 text-[15px]">
-                    <p class="whitespace-nowrap">(ลงชื่อ)........................................................................</p>
-                    <p class="font-bold text-[17px] pt-2">( ผู้ดูแลระบบ MBS )</p>
-                    <p class="text-slate-700">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
+            <div class="mt-16 flex justify-end sm:pr-12">
+                <div class="w-[320px] text-center">
+                    <p class="text-[16px] mb-3 whitespace-nowrap">(ลงชื่อ)...........................................................</p>
+                    <p class="font-bold text-[18px] mb-1 text-slate-900">( ผู้ดูแลระบบ MBS )</p>
+                    <p class="text-[15px] text-slate-800">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
 
@@ -451,11 +451,11 @@ $thai_year = $selected_year + 543;
             </div>
 
             <!-- ส่วนลงชื่อ (รูปแบบ ตารางรายงาน) -->
-            <div class="mt-16 flex justify-end pr-8">
-                <div class="min-w-[300px] text-center space-y-2 text-[15px]">
-                    <p class="mb-4 whitespace-nowrap">ลงชื่อ...................................................................ผู้รายงาน</p>
-                    <p class="font-bold text-[16px] text-slate-800 pt-2">( ผู้ดูแลระบบ MBS )</p>
-                    <p class="text-slate-700 text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
+            <div class="mt-16 flex justify-end sm:pr-12">
+                <div class="w-[320px] text-center">
+                    <p class="text-[16px] mb-3 whitespace-nowrap">ลงชื่อ...................................................ผู้รายงาน</p>
+                    <p class="font-bold text-[18px] mb-1 text-slate-900">( ผู้ดูแลระบบ MBS )</p>
+                    <p class="text-[15px] text-slate-800">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
         </div>
