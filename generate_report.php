@@ -27,7 +27,7 @@ function getPrefixName($name) {
 
 $tech_formal_name = getPrefixName($selected_tech);
 
-// ข้อมูลรายชื่อช่างทั้งหมด (อิงจากไฟล์ dashboard.php)
+// ข้อมูลรายชื่อช่างทั้งหมด
 $departments_data = [
     'ฝ่ายงานบริการเทคโนโลยีดิจิทัล' => [
         'นาย สมพร วงษ์จำปา',
@@ -84,16 +84,12 @@ $where_sql = count($where_conditions) > 0 ? "WHERE " . implode(" AND ", $where_c
 
 // สถิติ KPI
 $total_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $where_sql")->fetch_assoc()['c'] ?? 0;
-
 $done_where = empty($where_sql) ? "WHERE (status='ซ่อมเสร็จแล้ว' OR status='เสร็จสิ้น')" : "$where_sql AND (status='ซ่อมเสร็จแล้ว' OR status='เสร็จสิ้น')";
 $done_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $done_where")->fetch_assoc()['c'] ?? 0;
-
 $in_prog_where = empty($where_sql) ? "WHERE status='กำลังดำเนินการ'" : "$where_sql AND status='กำลังดำเนินการ'";
 $in_progress_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $in_prog_where")->fetch_assoc()['c'] ?? 0;
-
 $pending_where = empty($where_sql) ? "WHERE (status='รอดำเนินการ' OR status='รอรับเรื่อง')" : "$where_sql AND (status='รอดำเนินการ' OR status='รอรับเรื่อง')";
 $pending_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $pending_where")->fetch_assoc()['c'] ?? 0;
-
 $success_rate = ($total_jobs > 0) ? round(($done_jobs / $total_jobs) * 100, 2) : 0;
 
 // สถิติท็อปอุปกรณ์
@@ -209,7 +205,6 @@ $thai_year = $selected_year + 543;
                 <h1 class="font-bold text-sm border-l border-white/30 pl-3 text-white tracking-wide">ระบบออกเอกสารรายงาน</h1>
             </div>
 
-            <!-- ฟอร์มเลือกกรองข้อมูล -->
             <form method="GET" action="generate_report.php" class="flex flex-wrap items-center gap-2.5">
                 <input type="hidden" name="type" value="<?php echo htmlspecialchars($report_type); ?>">
                 
@@ -245,7 +240,6 @@ $thai_year = $selected_year + 543;
                 </button>
             </form>
 
-            <!-- ปุ่มสลับรูปแบบเอกสาร และปุ่มพิมพ์ -->
             <div class="flex items-center space-x-2">
                 <a href="generate_report.php?type=table&tech=<?php echo urlencode($selected_tech); ?>&month=<?php echo $selected_month; ?>" 
                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm <?php echo $report_type === 'table' ? 'btn-palette-active' : 'btn-palette-inactive'; ?>">
@@ -263,7 +257,6 @@ $thai_year = $selected_year + 543;
         </div>
     </div>
 
-    <!-- หน้ากระดาษเอกสาร A4 -->
     <div class="a4-container">
 
         <?php if ($report_type === 'memo'): ?>
@@ -273,7 +266,8 @@ $thai_year = $selected_year + 543;
         <div class="text-black pb-10">
             
             <div class="memo-head-box">
-                <img src="img/garuda.jpg" alt="ตราครุฑ" class="garuda-img">
+                <!-- แก้ไขโค้ดรูปครุฑตรงนี้ เพื่อไม่ให้เว็บหมุนค้าง -->
+                <img src="img/ตราครุฑ.jpg" alt="ตราครุฑ" class="garuda-img" onerror="this.style.display='none';">
                 <div class="memo-head-title">บันทึกข้อความ</div>
             </div>
 
@@ -346,12 +340,12 @@ $thai_year = $selected_year + 543;
                 </p>
             </div>
 
-            <!-- ส่วนลงชื่อ (รูปแบบ บันทึกข้อความ) -->
-            <div class="mt-16 w-full flex justify-end sm:pr-8">
-                <div class="w-[300px] text-center text-[15px] text-slate-900 leading-relaxed">
-                    <p class="mb-3">(ลงชื่อ)........................................................</p>
-                    <p class="font-bold text-[16px] mb-1">( ผู้ดูแลระบบ MBS )</p>
-                    <p class="text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
+            <!-- ส่วนลายเซ็น: บันทึกข้อความ (แก้ใหม่ล็อกโค้ดสมบูรณ์) -->
+            <div style="margin-top: 60px; text-align: right; padding-right: 20px;">
+                <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.8;">
+                    <div style="margin-bottom: 10px;">(ลงชื่อ)........................................................................</div>
+                    <div style="font-weight: bold; margin-bottom: 2px;">( ผู้ดูแลระบบ MBS )</div>
+                    <div>ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</div>
                 </div>
             </div>
 
@@ -450,14 +444,15 @@ $thai_year = $selected_year + 543;
                 </table>
             </div>
 
-            <!-- ส่วนลงชื่อ (รูปแบบ ตารางรายงาน) -->
-            <div class="mt-16 w-full flex justify-end sm:pr-8">
-                <div class="w-[300px] text-center text-[15px] text-slate-900 leading-relaxed">
-                    <p class="mb-3">ลงชื่อ......................................................ผู้รายงาน</p>
-                    <p class="font-bold text-[16px] mb-1">( ผู้ดูแลระบบ MBS )</p>
-                    <p class="text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
+            <!-- ส่วนลายเซ็น: ตารางรายงาน (แก้ใหม่ล็อกโค้ดสมบูรณ์) -->
+            <div style="margin-top: 60px; text-align: right; padding-right: 20px;">
+                <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.8;">
+                    <div style="margin-bottom: 10px;">ลงชื่อ..........................................................ผู้รายงาน</div>
+                    <div style="font-weight: bold; margin-bottom: 2px;">( ผู้ดูแลระบบ MBS )</div>
+                    <div>ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</div>
                 </div>
             </div>
+
         </div>
         <?php endif; ?>
 
