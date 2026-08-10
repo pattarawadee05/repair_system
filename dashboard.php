@@ -1161,7 +1161,7 @@ if($tech_list_res){
 
         function printOfficialReport() {
             const filterValue = document.getElementById('techFilter').value;
-            let printUrl = 'print_report.php';
+            let printUrl = 'generate_report.php';
             if (filterValue !== 'all') {
                 printUrl += `?tech=${encodeURIComponent(filterValue)}`;
             }
