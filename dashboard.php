@@ -1325,6 +1325,10 @@ if($tech_list_res){
                     <th class="px-5 py-4">Ticket No.</th>
                     <th class="px-5 py-4">Reporter</th>
                     <th class="px-5 py-4">Equipment</th>
+                    <th class="px-5 py-4">Technician</th>
+                    <th class="px-5 py-4">Root Cause</th>
+                    <th class="px-5 py-4">Received At</th>
+                    <th class="px-5 py-4">Completed At</th>
                     <th class="px-5 py-4 text-center">Status</th>
                 `;
             }
@@ -1333,14 +1337,14 @@ if($tech_list_res){
 
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
-                tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
             } else {
                 userRepairs.forEach(r => {
                     let statusClass = 'badge-pending';
                     if(r.status === 'กำลังดำเนินการ') statusClass = 'badge-progress';
                     else if(r.status === 'ซ่อมเสร็จแล้ว') statusClass = 'badge-success';
 
-                    let statusText = r.status == 'รอรับเรื่อง' ? 'Pending' : (r.status == 'กำลังดำเนินการ' ? 'In Progress' : 'Completed');
+                    let statusText = r.status || '-';
 
                     let createdDate = '-';
                     let createdTime = '';
@@ -1349,6 +1353,17 @@ if($tech_list_res){
                         createdDate = parts[0] || '-';
                         createdTime = parts[1] ? parts[1].substring(0, 5) : '';
                     }
+
+                    let techName = r.technician_name ? `<div class='text-indigo-600 font-bold'>${r.technician_name}</div>` : "<span class='text-slate-400'>Unassigned</span>";
+                    let rootCause = r.root_cause ? `<span class='text-slate-700 font-medium'>${r.root_cause}</span>` : "<span class='text-rose-500 font-bold'>-</span>";
+
+                    let has_received = (r.created_at && r.created_at != '0000-00-00 00:00:00');
+                    let received_date = has_received ? createdDate : '-';
+                    let received_time = has_received ? createdTime : '';
+
+                    let has_completed = (r.completed_at && r.completed_at != '0000-00-00 00:00:00');
+                    let completed_date = has_completed ? r.completed_at.split(' ')[0] : '-';
+                    let completed_time = has_completed ? r.completed_at.split(' ')[1].substring(0, 5) : '';
 
                     tbody.innerHTML += `<tr class="hover:bg-slate-50/50 transition-colors">
                         <td class="px-5 py-4 text-xs whitespace-nowrap">
@@ -1363,6 +1378,14 @@ if($tech_list_res){
                         <td class="px-5 py-4">
                             <div class="text-slate-800 font-bold">${r.equipment_type || '-'}</div>
                             <div class="text-slate-500 text-[11px] font-medium mt-0.5 max-w-[180px] truncate" title="${r.problem_desc || ''}">${r.problem_desc || ''}</div>
+                        </td>
+                        <td class="px-5 py-4">${techName}</td>
+                        <td class="px-5 py-4">${rootCause}</td>
+                        <td class="px-5 py-4 text-xs whitespace-nowrap">
+                            ${has_received ? `<div class='font-medium text-slate-700'>${received_date}</div><div class='text-[11px] text-indigo-600 font-semibold'>${received_time}</div>` : "<span class='text-slate-400'>-</span>"}
+                        </td>
+                        <td class="px-5 py-4 text-xs whitespace-nowrap">
+                            ${has_completed ? `<div class='font-medium text-emerald-700'>${completed_date}</div><div class='text-[11px] text-emerald-500 font-semibold'>${completed_time}</div>` : "<span class='text-slate-400'>-</span>"}
                         </td>
                         <td class="px-5 py-4 text-center"><span class="${statusClass}">${statusText}</span></td>
                     </tr>`;
