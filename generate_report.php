@@ -417,7 +417,7 @@ $thai_year = $selected_year + 543;
             <span>ระบบสารสนเทศ MBS REPAIR - คณะการบัญชีและการจัดการ มหาวิทยาลัยมหาสารคาม</span>
             <span>วันที่พิมพ์เอกสาร: <?php echo date('d/m/Y H:i'); ?> น.</span>
         </div>
-
+        
     </div>
 
 </body>
