@@ -100,9 +100,23 @@ if($check_repairs_table && $check_repairs_table->num_rows > 0) {
                   GROUP BY reporter_name, phone_number");
 }
 
+// ================= เตรียมข้อมูลประวัติและสถิติ =================
+$all_repairs_json = "[]";
+$check_repairs_list = $conn->query("SHOW TABLES LIKE 'repairs'");
+
+if($check_repairs_list && $check_repairs_list->num_rows > 0) {
+    // ดึงข้อมูลทั้งหมดรวมถึง id ด้วยเพื่อไปสร้างลิงก์ปุ่ม Action
+    $select_query = "SELECT * FROM repairs ORDER BY created_at DESC";
+    $rep_res = $conn->query($select_query);
+    $reps = [];
+    if($rep_res) {
+        while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
+        $all_repairs_json = json_encode($reps);
+    }
+}
+
 $has_image_col = false;
-$check_img_table = $conn->query("SHOW TABLES LIKE 'repairs'");
-if($check_img_table && $check_img_table->num_rows > 0) {
+if($check_repairs_list && $check_repairs_list->num_rows > 0) {
     $res_img = $conn->query("SHOW COLUMNS FROM repairs LIKE 'image_path'");
     if($res_img && $res_img->num_rows > 0) {
         $has_image_col = true;
@@ -200,28 +214,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
     echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลผู้แจ้งสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
 }
 
-// ================= เตรียมข้อมูลประวัติและสถิติ =================
-$all_repairs_json = "[]";
-$check_repairs_list = $conn->query("SHOW TABLES LIKE 'repairs'");
-
-if($check_repairs_list && $check_repairs_list->num_rows > 0) {
-    $select_fields = "ticket_no, equipment_type, status, problem_desc, phone_number, created_at, reporter_name";
-    
-    $has_tech_name_col = false;
-    $res_tech_col = $conn->query("SHOW COLUMNS FROM repairs LIKE 'technician_name'");
-    if($res_tech_col && $res_tech_col->num_rows > 0) $has_tech_name_col = true;
-    
-    if ($has_tech_name_col) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
-    if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
-    
-    $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
-    $rep_res = $conn->query($select_query);
-    $reps = [];
-    if($rep_res) {
-        while($r = $rep_res->fetch_assoc()){ $reps[] = $r; }
-        $all_repairs_json = json_encode($reps);
-    }
-}
 
 // ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown (เฉพาะ Technician)
 $tech_options = [];
@@ -446,7 +438,7 @@ if($tech_list_res){
                                             $date_fmt = date("Y-m-d", strtotime($rd['created_at']));
                                             
                                             $imageIcon = "";
-                                            if($has_image_col && !empty($rd['image_path'])) {
+                                            if(isset($rd['image_path']) && !empty($rd['image_path'])) {
                                                 $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
                                             }
                                             
@@ -506,11 +498,7 @@ if($tech_list_res){
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100 bg-white">
                                 <?php
-                                $select_fields = "id, ticket_no, equipment_type, status, problem_desc, reporter_name, phone_number, created_at, completed_at, root_cause";
-                                if ($has_tech_name_col) $select_fields .= ", technician_name"; else $select_fields .= ", '' as technician_name";
-                                if ($has_image_col) $select_fields .= ", image_path"; else $select_fields .= ", NULL as image_path";
-                                
-                                $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
+                                $select_query = "SELECT * FROM repairs ORDER BY created_at DESC";
                                 $res = $conn->query($select_query);
 
                                 $itTechs = ["นาย สมพร วงษ์จำปา", "นาย ปริญญา จันทรภา", "นาย ทองสน พลมีศักดิ์", "นาย ธีรศักดิ์ พาโคกทม"];
@@ -544,7 +532,7 @@ if($tech_list_res){
                                         $rootCause = !empty($row['root_cause']) ? "<span class='text-slate-700 font-medium'>{$row['root_cause']}</span>" : "<span class='text-rose-500 font-bold'>-</span>";
 
                                         $imageIcon = "";
-                                        if($has_image_col && !empty($row['image_path'])) {
+                                        if(isset($row['image_path']) && !empty($row['image_path'])) {
                                             $imageIcon = "<i class='fas fa-image text-slate-400 ml-1' title='มีรูปภาพแนบ'></i>";
                                         }
 
@@ -1057,7 +1045,7 @@ if($tech_list_res){
             </div>
            <div class="p-6 overflow-y-auto flex-1 bg-white">
                 <div class="w-full overflow-x-auto rounded-2xl border border-slate-100 shadow-sm">
-                    <table class="w-full text-left whitespace-nowrap min-w-[1000px]">
+                    <table class="w-full text-left whitespace-nowrap min-w-[1100px]">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
                             <tr>
                                 <th class="px-5 py-4">Date / Time</th>
@@ -1070,6 +1058,7 @@ if($tech_list_res){
                                 <th class="px-5 py-4">Received At</th>
                                 <th class="px-5 py-4">Completed At</th>
                                 <th class="px-5 py-4 text-center">Status</th>
+                                <th class="px-5 py-4 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50" id="historyTableBody">
@@ -1342,7 +1331,7 @@ if($tech_list_res){
 
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
-                tbody.innerHTML = `<tr><td colspan="10" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
             } else {
                 userRepairs.forEach(r => {
                     let statusClass = 'badge-pending';
@@ -1406,6 +1395,12 @@ if($tech_list_res){
                             ${has_completed ? `<div class='font-medium text-emerald-700'>${completed_date}</div><div class='text-[11px] text-emerald-500 font-semibold'>${completed_time}</div>` : "<span class='text-slate-400'>-</span>"}
                         </td>
                         <td class="px-5 py-4 text-center"><span class="${statusClass}">${statusText}</span></td>
+                        <td class="px-5 py-4 text-right">
+                            <div class='flex items-center justify-end space-x-2'>
+                                <a href='update_repair.php?id=${r.id}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='Edit'><i class='fas fa-pen-to-square'></i></a>
+                                <a href='view_repair.php?id=${r.id}' class='w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-all flex items-center justify-center border border-slate-100 shadow-2xs' title='View'><i class='fas fa-eye'></i></a>
+                            </div>
+                        </td>
                     </tr>`;
                 });
             }
