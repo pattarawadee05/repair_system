@@ -346,12 +346,12 @@ $thai_year = $selected_year + 543;
                 </p>
             </div>
 
-            <!-- ส่วนลงชื่อ (รูปแบบ บันทึกข้อความ) แก้ไขแล้วให้พอดีสมส่วนเป๊ะ -->
-            <div style="margin-top: 50px; text-align: right; padding-right: 40px;">
-                <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.6;">
-                    <div style="margin-bottom: 10px;">(ลงชื่อ)....................................................................................</div>
-                    <div style="font-weight: bold; margin-bottom: 2px;">( ผู้ดูแลระบบ MBS )</div>
-                    <div>ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</div>
+            <!-- ส่วนลงชื่อ (รูปแบบ บันทึกข้อความ) -->
+            <div class="mt-16 w-full flex justify-end sm:pr-8">
+                <div class="w-[300px] text-center text-[15px] text-slate-900 leading-relaxed">
+                    <p class="mb-3">(ลงชื่อ)........................................................</p>
+                    <p class="font-bold text-[16px] mb-1">( ผู้ดูแลระบบ MBS )</p>
+                    <p class="text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
 
@@ -450,12 +450,12 @@ $thai_year = $selected_year + 543;
                 </table>
             </div>
 
-            <!-- ส่วนลงชื่อ (รูปแบบ ตารางรายงาน) แก้ไขแล้วให้พอดีสมส่วนเป๊ะ -->
-            <div style="margin-top: 50px; text-align: right; padding-right: 40px;">
-                <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.6;">
-                    <div style="margin-bottom: 10px;">ลงชื่อ...........................................................................ผู้รายงาน</div>
-                    <div style="font-weight: bold; margin-bottom: 2px;">( ผู้ดูแลระบบ MBS )</div>
-                    <div>ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</div>
+            <!-- ส่วนลงชื่อ (รูปแบบ ตารางรายงาน) -->
+            <div class="mt-16 w-full flex justify-end sm:pr-8">
+                <div class="w-[300px] text-center text-[15px] text-slate-900 leading-relaxed">
+                    <p class="mb-3">ลงชื่อ......................................................ผู้รายงาน</p>
+                    <p class="font-bold text-[16px] mb-1">( ผู้ดูแลระบบ MBS )</p>
+                    <p class="text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
         </div>
