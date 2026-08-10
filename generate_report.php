@@ -27,7 +27,7 @@ function getPrefixName($name) {
 
 $tech_formal_name = getPrefixName($selected_tech);
 
-// ข้อมูลรายชื่อช่างทั้งหมด
+// ข้อมูลรายชื่อช่างทั้งหมด (อิงจากไฟล์ dashboard.php)
 $departments_data = [
     'ฝ่ายงานบริการเทคโนโลยีดิจิทัล' => [
         'นาย สมพร วงษ์จำปา',
@@ -84,12 +84,16 @@ $where_sql = count($where_conditions) > 0 ? "WHERE " . implode(" AND ", $where_c
 
 // สถิติ KPI
 $total_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $where_sql")->fetch_assoc()['c'] ?? 0;
+
 $done_where = empty($where_sql) ? "WHERE (status='ซ่อมเสร็จแล้ว' OR status='เสร็จสิ้น')" : "$where_sql AND (status='ซ่อมเสร็จแล้ว' OR status='เสร็จสิ้น')";
 $done_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $done_where")->fetch_assoc()['c'] ?? 0;
+
 $in_prog_where = empty($where_sql) ? "WHERE status='กำลังดำเนินการ'" : "$where_sql AND status='กำลังดำเนินการ'";
 $in_progress_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $in_prog_where")->fetch_assoc()['c'] ?? 0;
+
 $pending_where = empty($where_sql) ? "WHERE (status='รอดำเนินการ' OR status='รอรับเรื่อง')" : "$where_sql AND (status='รอดำเนินการ' OR status='รอรับเรื่อง')";
 $pending_jobs = $conn->query("SELECT COUNT(*) as c FROM repairs $pending_where")->fetch_assoc()['c'] ?? 0;
+
 $success_rate = ($total_jobs > 0) ? round(($done_jobs / $total_jobs) * 100, 2) : 0;
 
 // สถิติท็อปอุปกรณ์
@@ -209,14 +213,16 @@ $thai_year = $selected_year + 543;
                 <input type="hidden" name="type" value="<?php echo htmlspecialchars($report_type); ?>">
                 
                 <div>
+                    <!-- อัปเดต Dropdown ใส่สัญลักษณ์และย่อหน้าให้เห็นฝ่ายงานแบบชัดเจน -->
                     <select name="tech" class="bg-white text-[#033495] font-semibold text-xs rounded-xl px-3 py-1.5 border border-sky-200 shadow-sm focus:outline-none">
-                        <option value="all" <?php echo $selected_tech === 'all' ? 'selected' : ''; ?>>-- ช่างทุกคน (ภาพรวมคณะ) --</option>
+                        <option value="all" <?php echo $selected_tech === 'all' ? 'selected' : ''; ?>>🌟 ช่างทุกคน (ภาพรวมคณะ)</option>
                         <?php 
                         foreach($departments_data as $dept => $techs) {
-                            echo "<optgroup label='".htmlspecialchars($dept)."'>";
+                            echo "<optgroup label='--- 🏢 ".htmlspecialchars($dept)." ---'>";
                             foreach($techs as $t_name) {
                                 $selected = ($selected_tech === $t_name) ? 'selected' : '';
-                                echo "<option value='".htmlspecialchars($t_name)."' $selected>".htmlspecialchars($t_name)."</option>";
+                                // ใส่ &nbsp; เพื่อเว้นวรรคย่อหน้า และใส่ • หน้าชื่อ
+                                echo "<option value='".htmlspecialchars($t_name)."' $selected>&nbsp;&nbsp;&nbsp;• ".htmlspecialchars($t_name)."</option>";
                             }
                             echo "</optgroup>";
                         }
@@ -266,7 +272,6 @@ $thai_year = $selected_year + 543;
         <div class="text-black pb-10">
             
             <div class="memo-head-box">
-                <!-- แก้ไขโค้ดรูปครุฑตรงนี้ เพื่อไม่ให้เว็บหมุนค้าง -->
                 <img src="img/ตราครุฑ.jpg" alt="ตราครุฑ" class="garuda-img" onerror="this.style.display='none';">
                 <div class="memo-head-title">บันทึกข้อความ</div>
             </div>
@@ -340,7 +345,7 @@ $thai_year = $selected_year + 543;
                 </p>
             </div>
 
-            <!-- ส่วนลายเซ็น: บันทึกข้อความ (แก้ใหม่ล็อกโค้ดสมบูรณ์) -->
+            <!-- ส่วนลายเซ็น: บันทึกข้อความ -->
             <div style="margin-top: 60px; text-align: right; padding-right: 20px;">
                 <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.8;">
                     <div style="margin-bottom: 10px;">(ลงชื่อ)........................................................................</div>
@@ -444,7 +449,7 @@ $thai_year = $selected_year + 543;
                 </table>
             </div>
 
-            <!-- ส่วนลายเซ็น: ตารางรายงาน (แก้ใหม่ล็อกโค้ดสมบูรณ์) -->
+            <!-- ส่วนลายเซ็น: ตารางรายงาน -->
             <div style="margin-top: 60px; text-align: right; padding-right: 20px;">
                 <div style="display: inline-block; text-align: center; font-size: 15px; color: #000; line-height: 1.8;">
                     <div style="margin-bottom: 10px;">ลงชื่อ..........................................................ผู้รายงาน</div>
