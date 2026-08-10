@@ -347,11 +347,11 @@ $thai_year = $selected_year + 543;
             </div>
 
             <!-- ส่วนลงชื่อ (รูปแบบ บันทึกข้อความ) -->
-            <div class="mt-12 flex justify-end">
-                <div class="w-80 text-center space-y-1.5 text-[15px]">
-                    <p>(ลงชื่อ)....................................................................................</p>
-                    <p class="font-bold text-[17px] mt-3">( ผู้ดูแลระบบ MBS )</p>
-                    <p class="text-slate-700 text-[15px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
+            <div class="mt-16 flex justify-end pr-8">
+                <div class="min-w-[300px] text-center space-y-2 text-[15px]">
+                    <p class="whitespace-nowrap">(ลงชื่อ)........................................................................</p>
+                    <p class="font-bold text-[17px] pt-2">( ผู้ดูแลระบบ MBS )</p>
+                    <p class="text-slate-700">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
 
@@ -451,10 +451,10 @@ $thai_year = $selected_year + 543;
             </div>
 
             <!-- ส่วนลงชื่อ (รูปแบบ ตารางรายงาน) -->
-            <div class="mt-10 flex justify-end">
-                <div class="w-80 text-center space-y-1.5 text-[14px]">
-                    <p class="mb-6">ลงชื่อ......................................................................ผู้รายงาน</p>
-                    <p class="font-bold text-[16px] text-slate-800">( ผู้ดูแลระบบ MBS )</p>
+            <div class="mt-16 flex justify-end pr-8">
+                <div class="min-w-[300px] text-center space-y-2 text-[15px]">
+                    <p class="mb-4 whitespace-nowrap">ลงชื่อ...................................................................ผู้รายงาน</p>
+                    <p class="font-bold text-[16px] text-slate-800 pt-2">( ผู้ดูแลระบบ MBS )</p>
                     <p class="text-slate-700 text-[14px]">ตำแหน่ง ผู้รับผิดชอบงานซ่อม / เจ้าหน้าที่ช่าง</p>
                 </div>
             </div>
