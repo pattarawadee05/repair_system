@@ -488,13 +488,14 @@ if($tech_list_res){
                         </div>
                     </div>
                     <div class="overflow-x-auto w-full">
-                        <table class="w-full text-left whitespace-nowrap min-w-[1100px]">
+                        <table class="w-full text-left whitespace-nowrap min-w-[1200px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs uppercase tracking-widest font-bold">
                                 <tr>
                                     <th class="px-6 py-4">Date / Time</th>
                                     <th class="px-6 py-4">Ticket No.</th>
                                     <th class="px-6 py-4">Reporter</th>
                                     <th class="px-6 py-4">Equipment</th>
+                                    <th class="px-6 py-4">Department</th>
                                     <th class="px-6 py-4">Technician</th>
                                     <th class="px-6 py-4">Root Cause</th>
                                     <th class="px-6 py-4">Received At</th>
@@ -511,10 +512,23 @@ if($tech_list_res){
                                 
                                 $select_query = "SELECT {$select_fields} FROM repairs ORDER BY created_at DESC";
                                 $res = $conn->query($select_query);
+
+                                $itTechs = ["นาย สมพร วงษ์จำปา", "นาย ปริญญา จันทรภา", "นาย ทองสน พลมีศักดิ์", "นาย ธีรศักดิ์ พาโคกทม"];
+                                $avTechs = ["นาย จิตรณรงค์ นาใจคง", "นาย ลำไพร ทองบ่อ", "นาย รักชาติ แดงเทโพธิ์", "นาย ปิยะสันต์ บุญพระ", "นาย จตุพล ฤทธิสิงห์", "นาย อาทิตย์ บรรเทา"];
+                                $transTechs = ["นาย ธวัชชัย รัสสมบัติ", "นาย ทรงภพ จันทร์ลอย", "นาย รนภักดี ลิงลม", "นาย กิตติภณ รัดถา", "นาย ทิวา เนื่องทะบาล", "นาย นิรุตติ์ กองเงิน", "นาย อุทัย หาหอม"];
+
                                 if($res && $res->num_rows > 0){
                                     while($row = $res->fetch_assoc()) {
                                         $stClass = ($row['status'] == 'รอรับเรื่อง') ? 'badge-pending' : (($row['status'] == 'กำลังดำเนินการ') ? 'badge-progress' : 'badge-success');
                                         $techName = !empty($row['technician_name']) ? "<div class='text-indigo-600 font-bold'>{$row['technician_name']}</div>" : "<span class='text-slate-400'>Unassigned</span>";
+
+                                        $deptEng = "<span class='text-slate-400'>-</span>";
+                                        if(!empty($row['technician_name'])) {
+                                            if(in_array($row['technician_name'], $itTechs)) $deptEng = "<span class='px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
+                                            elseif(in_array($row['technician_name'], $avTechs)) $deptEng = "<span class='px-2.5 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
+                                            elseif(in_array($row['technician_name'], $transTechs)) $deptEng = "<span class='px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
+                                            else $deptEng = "<span class='px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
+                                        }
 
                                         $created_date = !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : '-';
                                         $created_time = !empty($row['created_at']) ? date('H:i', strtotime($row['created_at'])) : '';
@@ -545,6 +559,7 @@ if($tech_list_res){
                                                 <div class='text-slate-800 font-bold'>{$row['equipment_type']} {$imageIcon}</div>
                                                 <div class='text-slate-500 text-[11px] font-medium mt-0.5 max-w-[150px] truncate' title='{$row['problem_desc']}'>{$row['problem_desc']}</div>
                                             </td>
+                                            <td class='px-6 py-4'>{$deptEng}</td>
                                             <td class='px-6 py-4'>{$techName}</td>
                                             <td class='px-6 py-4'>{$rootCause}</td>
                                             <td class='px-6 py-4 text-xs whitespace-nowrap'>";
@@ -572,7 +587,7 @@ if($tech_list_res){
                                             </td>
                                         </tr>";
                                     }
-                                } else { echo "<tr><td colspan='10' class='px-6 py-16 text-center text-slate-400 font-medium'>No records found</td></tr>"; }
+                                } else { echo "<tr><td colspan='11' class='px-6 py-16 text-center text-slate-400 font-medium'>No records found</td></tr>"; }
                                 ?>
                             </tbody>
                         </table>
@@ -1035,20 +1050,25 @@ if($tech_list_res){
     <!-- Modal ประวัติงาน -->
     <div id="historyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 px-4">
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('historyModal')"></div>
-        <div class="modal-container bg-white w-full max-w-4xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[80vh] max-h-[800px]">
+        <div class="modal-container bg-white w-full max-w-5xl mx-auto rounded-3xl shadow-2xl z-50 overflow-hidden transform transition-all flex flex-col h-[85vh] max-h-[850px]">
             <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
                 <p class="text-lg font-extrabold text-slate-800 truncate pr-4" id="historyModalTitle">History</p>
                 <button onclick="toggleModal('historyModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0"><i class="fas fa-times"></i></button>
             </div>
            <div class="p-6 overflow-y-auto flex-1 bg-white">
                 <div class="w-full overflow-x-auto rounded-2xl border border-slate-100 shadow-sm">
-                    <table class="w-full text-left whitespace-nowrap min-w-[700px]">
+                    <table class="w-full text-left whitespace-nowrap min-w-[1000px]">
                         <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest font-bold border-b border-slate-100">
                             <tr>
                                 <th class="px-5 py-4">Date / Time</th>
                                 <th class="px-5 py-4">Ticket No.</th>
                                 <th class="px-5 py-4">Reporter</th>
                                 <th class="px-5 py-4">Equipment</th>
+                                <th class="px-5 py-4">Department</th>
+                                <th class="px-5 py-4">Technician</th>
+                                <th class="px-5 py-4">Root Cause</th>
+                                <th class="px-5 py-4">Received At</th>
+                                <th class="px-5 py-4">Completed At</th>
                                 <th class="px-5 py-4 text-center">Status</th>
                             </tr>
                         </thead>
@@ -1161,9 +1181,9 @@ if($tech_list_res){
 
         function printOfficialReport() {
             const filterValue = document.getElementById('techFilter').value;
-            let printUrl = 'generate_report.php';
+            let printUrl = 'generate_report.php?type=table';
             if (filterValue !== 'all') {
-                printUrl += `?tech=${encodeURIComponent(filterValue)}`;
+                printUrl += `&tech=${encodeURIComponent(filterValue)}`;
             }
             window.open(printUrl, '_blank');
         }
@@ -1318,26 +1338,11 @@ if($tech_list_res){
             const tbody = document.getElementById('historyTableBody'); 
             tbody.innerHTML = '';
 
-            const theadRow = document.querySelector('#historyModal thead tr');
-            if(theadRow) {
-                theadRow.innerHTML = `
-                    <th class="px-5 py-4">Date / Time</th>
-                    <th class="px-5 py-4">Ticket No.</th>
-                    <th class="px-5 py-4">Reporter</th>
-                    <th class="px-5 py-4">Equipment</th>
-                    <th class="px-5 py-4">Technician</th>
-                    <th class="px-5 py-4">Root Cause</th>
-                    <th class="px-5 py-4">Received At</th>
-                    <th class="px-5 py-4">Completed At</th>
-                    <th class="px-5 py-4 text-center">Status</th>
-                `;
-            }
-
             const userRepairs = allRepairs.filter(r => type === 'reporter' ? r.reporter_name === fullName : r.technician_name === fullName);
 
             if(userRepairs.length === 0) {
                 let emptyMsg = type === 'reporter' ? 'No repair history found.' : 'No tasks assigned yet.';
-                tbody.innerHTML = `<tr><td colspan="9" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="px-5 py-8 text-center text-slate-400 font-medium">${emptyMsg}</td></tr>`;
             } else {
                 userRepairs.forEach(r => {
                     let statusClass = 'badge-pending';
@@ -1364,6 +1369,18 @@ if($tech_list_res){
                     let has_completed = (r.completed_at && r.completed_at != '0000-00-00 00:00:00');
                     let completed_date = has_completed ? r.completed_at.split(' ')[0] : '-';
                     let completed_time = has_completed ? r.completed_at.split(' ')[1].substring(0, 5) : '';
+                    
+                    let deptEng = "<span class='text-slate-400'>-</span>";
+                    if(r.technician_name) {
+                        const itTechs = ["นาย สมพร วงษ์จำปา", "นาย ปริญญา จันทรภา", "นาย ทองสน พลมีศักดิ์", "นาย ธีรศักดิ์ พาโคกทม"];
+                        const avTechs = ["นาย จิตรณรงค์ นาใจคง", "นาย ลำไพร ทองบ่อ", "นาย รักชาติ แดงเทโพธิ์", "นาย ปิยะสันต์ บุญพระ", "นาย จตุพล ฤทธิสิงห์", "นาย อาทิตย์ บรรเทา"];
+                        const transTechs = ["นาย ธวัชชัย รัสสมบัติ", "นาย ทรงภพ จันทร์ลอย", "นาย รนภักดี ลิงลม", "นาย กิตติภณ รัดถา", "นาย ทิวา เนื่องทะบาล", "นาย นิรุตติ์ กองเงิน", "นาย อุทัย หาหอม"];
+                        
+                        if (itTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
+                        else if (avTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
+                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
+                        else deptEng = "<span class='px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
+                    }
 
                     tbody.innerHTML += `<tr class="hover:bg-slate-50/50 transition-colors">
                         <td class="px-5 py-4 text-xs whitespace-nowrap">
@@ -1379,6 +1396,7 @@ if($tech_list_res){
                             <div class="text-slate-800 font-bold">${r.equipment_type || '-'}</div>
                             <div class="text-slate-500 text-[11px] font-medium mt-0.5 max-w-[180px] truncate" title="${r.problem_desc || ''}">${r.problem_desc || ''}</div>
                         </td>
+                        <td class="px-5 py-4">${deptEng}</td>
                         <td class="px-5 py-4">${techName}</td>
                         <td class="px-5 py-4">${rootCause}</td>
                         <td class="px-5 py-4 text-xs whitespace-nowrap">
