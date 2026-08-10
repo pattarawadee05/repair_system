@@ -54,6 +54,22 @@ $departments_data = [
     ]
 ];
 
+// หาระบุฝ่ายงานของช่างที่ถูกเลือก
+$tech_department = '';
+if ($selected_tech === 'all') {
+    $tech_department = 'ทุกฝ่ายงาน';
+} else {
+    foreach ($departments_data as $dept => $techs) {
+        if (in_array($selected_tech, $techs)) {
+            $tech_department = $dept;
+            break;
+        }
+    }
+    if (empty($tech_department)) {
+        $tech_department = 'ไม่ระบุฝ่ายงาน';
+    }
+}
+
 // เงื่อนไขการค้นหา SQL
 $where_conditions = [];
 if ($selected_month > 0) {
@@ -274,7 +290,7 @@ $thai_year = $selected_year + 543;
                 </tr>
                 <tr>
                     <td class="memo-lbl">เรื่อง</td>
-                    <td colspan="3">รายงานสรุปผลการปฏิบัติงาน<?php echo ($selected_tech !== 'all') ? 'รายบุคคล ของ '.htmlspecialchars($tech_formal_name) : 'ภาพรวม'; ?> ประจำเดือน <?php echo $thai_months[$selected_month]; ?></td>
+                    <td colspan="3">รายงานสรุปผลการปฏิบัติงาน<?php echo ($selected_tech !== 'all') ? 'รายบุคคล ของ '.htmlspecialchars($tech_formal_name).' (สังกัด: '.htmlspecialchars($tech_department).')' : 'ภาพรวม'; ?> ประจำเดือน <?php echo $thai_months[$selected_month]; ?></td>
                 </tr>
                 <tr>
                     <td class="memo-lbl">เรียน</td>
@@ -350,8 +366,15 @@ $thai_year = $selected_year + 543;
                 <h2 class="text-xl font-bold text-slate-900">รายงานสรุปผลการปฏิบัติงานซ่อมบำรุงครุภัณฑ์</h2>
                 <p class="text-sm font-semibold text-slate-700 mt-1">คณะการบัญชีและการจัดการ มหาวิทยาลัยมหาสารคาม</p>
                 <p class="text-xs text-slate-600 mt-1">
-                    <strong>ประจำเดือน:</strong> <?php echo $thai_months[$selected_month]; ?> พ.ศ. <?php echo $selected_year + 543; ?> 
-                    | <strong>ช่างผู้รับผิดชอบ:</strong> <?php echo ($selected_tech === 'all') ? 'เจ้าหน้าที่ช่างทุกคน (ภาพรวมคณะ)' : htmlspecialchars($tech_formal_name); ?>
+                    <strong>ประจำเดือน:</strong> <?php echo $thai_months[$selected_month]; ?> พ.ศ. <?php echo $selected_year + 543; ?> <br>
+                    <strong>ช่างผู้รับผิดชอบ:</strong> 
+                    <?php 
+                        if ($selected_tech === 'all') {
+                            echo 'เจ้าหน้าที่ช่างทุกคน (ภาพรวมคณะ)';
+                        } else {
+                            echo htmlspecialchars($tech_formal_name) . " <strong>| สังกัด:</strong> " . htmlspecialchars($tech_department);
+                        }
+                    ?>
                 </p>
             </div>
 
