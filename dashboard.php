@@ -870,8 +870,8 @@ if($tech_list_res){
                                                 </div>
                                             </td>
                                             <td class='px-6 py-4 text-slate-500 font-medium'>".($r['phone_number'] ? $r['phone_number'] : '-')."</td>
-                                            <td class='px-6 py-4 text-center">
-                                                <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600"><?php echo $r['total_repairs']; ?></span>
+                                            <td class='px-6 py-4 text-center'>
+                                                <span class='px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600'>{$r['total_repairs']}</span>
                                             </td>
                                             <td class='px-6 py-4 text-right'>
                                                 <div class='flex items-center justify-end space-x-2'>
