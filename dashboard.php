@@ -55,7 +55,6 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
 
 $conn->query("ALTER TABLE users MODIFY COLUMN role VARCHAR(50) DEFAULT 'User'");
 
-// 💡 ขยายความจุช่องเบอร์โทรให้รองรับข้อความยาวๆ (แก้ปัญหา Data too long)
 $conn->query("ALTER TABLE users MODIFY COLUMN phone VARCHAR(255) NULL");
 $conn->query("ALTER TABLE technicians MODIFY COLUMN phone VARCHAR(255) NULL");
 
@@ -134,7 +133,7 @@ if($check_repairs_list && $check_repairs_list->num_rows > 0) {
     }
 }
 
-// ================= จัดการข้อมูล (แบบใหม่ ป้องกันปัญหารีเฟรช) =================
+// ================= จัดการข้อมูล =================
 
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
@@ -223,7 +222,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
             $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
             $msg = 'เพิ่มรายชื่อใหม่สำเร็จ!';
         } else {
-            $error_msg = "Database Error: " . $conn->error;
+            $error_msg = "Database Error (Insert): " . $conn->error;
         }
     } else {
         if ($avatar_url) {
@@ -231,20 +230,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
             if ($stmt) {
                 $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
             } else {
-                $error_msg = "Database Error: " . $conn->error;
+                $error_msg = "Database Error (Update 1): " . $conn->error;
             }
         } else {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=? WHERE id=?");
             if ($stmt) {
                 $stmt->bind_param("sssssi", $full_name, $eng_name, $phone, $department, $role, $user_id);
             } else {
-                $error_msg = "Database Error: " . $conn->error;
+                $error_msg = "Database Error (Update 2): " . $conn->error;
             }
         }
         $msg = 'อัปเดตข้อมูลสำเร็จ!';
     }
     
-    // 💡 การทำงานแบบใหม่ (PRG Pattern) เก็บสถานะไว้ใน Session แล้ว Redirect หนี
     if ($error_msg) {
         $_SESSION['toast'] = ['icon' => 'error', 'title' => 'พบข้อผิดพลาด!', 'text' => $error_msg];
     } else {
@@ -692,11 +690,15 @@ if($tech_list_res){
                                             $js_role = htmlspecialchars($u['role'], ENT_QUOTES); 
                                             $js_avatar = !empty($u['avatar_url']) ? htmlspecialchars($u['avatar_url'], ENT_QUOTES) : '';
 
+                                            // 💡 ปรับให้ตารางแสดงชื่ออังกฤษใต้ชื่อไทย
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
-                                                <td class='px-6 py-4 text-slate-800 font-bold'>
+                                                <td class='px-6 py-4'>
                                                     <div class='flex items-center'>
-                                                        <div class='w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3'><i class='fas {$icon} text-xs'></i></div>
-                                                        ".(!empty($u['full_name']) ? $u['full_name'] : '-')."
+                                                        <div class='w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 shrink-0'><i class='fas {$icon} text-xs'></i></div>
+                                                        <div>
+                                                            <div class='text-slate-800 font-bold'>".(!empty($u['full_name']) ? $u['full_name'] : '-')."</div>
+                                                            ".(!empty($u['eng_name']) ? "<div class='text-[11px] font-medium text-slate-500 mt-0.5'>{$u['eng_name']}</div>" : "")."
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td class='px-6 py-4 text-slate-500 font-medium'>".(!empty($u['phone']) ? $u['phone'] : '-')."</td>
@@ -752,11 +754,15 @@ if($tech_list_res){
                                                 if($job_res) $total_jobs = $job_res->fetch_assoc()['c'];
                                             }
 
+                                            // 💡 ปรับให้ตารางแสดงชื่ออังกฤษใต้ชื่อไทย
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
-                                                <td class='px-6 py-4 text-slate-800 font-bold'>
+                                                <td class='px-6 py-4'>
                                                     <div class='flex items-center'>
-                                                        <div class='w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 mr-3'><i class='fas fa-tools text-xs'></i></div>
-                                                        ".(!empty($t['full_name']) ? $t['full_name'] : '-')."
+                                                        <div class='w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 mr-3 shrink-0'><i class='fas fa-tools text-xs'></i></div>
+                                                        <div>
+                                                            <div class='text-slate-800 font-bold'>".(!empty($t['full_name']) ? $t['full_name'] : '-')."</div>
+                                                            ".(!empty($t['eng_name']) ? "<div class='text-[11px] font-medium text-slate-500 mt-0.5'>{$t['eng_name']}</div>" : "")."
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td class='px-6 py-4 text-slate-500 font-medium'>".(!empty($t['phone']) ? $t['phone'] : '-')."</td> 
@@ -1138,7 +1144,6 @@ if($tech_list_res){
     </div>
 
     <!-- ================== JAVASCRIPT ================== -->
-    <!-- แทรก Session Message ให้ทำงาน (แสดงผล Popup SweetAlert) -->
     <?php if(isset($_SESSION['toast'])): ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1378,19 +1383,27 @@ if($tech_list_res){
             let isManagement = (role.toLowerCase() === 'admin' || role.toLowerCase() === 'executive');
             let baseRole = isManagement ? 'Admin' : 'Technician';
             let title = isManagement ? 'Manage Administrator' : 'Manage Technician';
-            document.getElementById('techAdminModalTitle').innerHTML = title; document.getElementById('techAdmin_role').value = baseRole; 
+            document.getElementById('techAdminModalTitle').innerHTML = title; 
+            document.getElementById('techAdmin_role').value = baseRole; 
             
-            const adminLevelDiv = document.getElementById('adminLevelDiv'); const deptDiv = document.getElementById('deptDiv');
+            const adminLevelDiv = document.getElementById('adminLevelDiv'); 
+            const deptDiv = document.getElementById('deptDiv');
+            
             if(isManagement) {
-                adminLevelDiv.classList.remove('hidden'); deptDiv.classList.add('hidden'); document.getElementById('techAdmin_department_select').required = false;
-                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; document.getElementById('techAdmin_level').value = exactRole;
+                adminLevelDiv.classList.remove('hidden'); 
+                deptDiv.classList.add('hidden'); 
+                document.getElementById('techAdmin_department_select').required = false;
+                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; 
+                document.getElementById('techAdmin_level').value = exactRole;
             } else {
-                adminLevelDiv.classList.add('hidden'); deptDiv.classList.remove('hidden'); document.getElementById('techAdmin_department_select').required = true;
+                adminLevelDiv.classList.add('hidden'); 
+                deptDiv.classList.remove('hidden'); 
+                document.getElementById('techAdmin_department_select').required = true;
             }
 
             document.getElementById('techAdmin_id').value = id; 
             document.getElementById('techAdmin_fullname').value = f; 
-            document.getElementById('techAdmin_engname').value = eng;
+            document.getElementById('techAdmin_engname').value = eng; 
             document.getElementById('techAdmin_phone').value = p; 
             
             document.getElementById('techAdmin_avatar').value = '';
@@ -1400,7 +1413,8 @@ if($tech_list_res){
                 document.getElementById('preview_avatar').src = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + (f !== '' ? encodeURIComponent(f) : 'user') + '&backgroundColor=e2e8f0';
             }
             
-            document.getElementById('techAdmin_department_select').name = "department_select"; document.getElementById('techAdmin_department_custom').name = "department_custom";
+            document.getElementById('techAdmin_department_select').name = "department_select"; 
+            document.getElementById('techAdmin_department_custom').name = "department_custom";
             setDropdownOrCustom('techAdmin_department_select', 'techAdmin_department_custom', d);
             toggleModal('techAdminModal'); 
         }
