@@ -63,6 +63,12 @@ if($check_fullname && $check_fullname->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
 }
 
+// 💡 เพิ่มคอลัมน์ eng_name เข้าตาราง users อัตโนมัติ
+$check_eng_name = $conn->query("SHOW COLUMNS FROM users LIKE 'eng_name'");
+if($check_eng_name && $check_eng_name->num_rows == 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN eng_name VARCHAR(100) NULL AFTER full_name");
+}
+
 $check_phone = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
 if($check_phone && $check_phone->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
@@ -78,7 +84,6 @@ if($check_pwd && $check_pwd->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN password VARCHAR(255) NULL AFTER username");
 }
 
-// เช็คและเพิ่มคอลัมน์ avatar_url ในตาราง users หากยังไม่มี
 $check_avatar = $conn->query("SHOW COLUMNS FROM users LIKE 'avatar_url'");
 if($check_avatar && $check_avatar->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) NULL AFTER department");
@@ -132,18 +137,6 @@ if($check_repairs_list && $check_repairs_list->num_rows > 0) {
 
 // ================= จัดการข้อมูล =================
 
-if (isset($_GET['approve_tech'])) {
-    $id = intval($_GET['approve_tech']);
-    $conn->query("UPDATE technicians SET approval_status = 'อนุมัติแล้ว' WHERE id = $id");
-    echo "<script>window.location.href='dashboard.php?tab=technicians';</script>";
-}
-
-if (isset($_GET['reject_tech'])) {
-    $id = intval($_GET['reject_tech']);
-    $conn->query("DELETE FROM technicians WHERE id = $id");
-    echo "<script>window.location.href='dashboard.php?tab=technicians';</script>";
-}
-
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
     $conn->query("DELETE FROM assets WHERE id = $del_id");
@@ -178,6 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     $user_id = $_POST['user_id'];
     
     $full_name = !empty($_POST['full_name']) ? $_POST['full_name'] : NULL;
+    $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; // 💡 รับค่า English Name
     $phone = !empty($_POST['phone']) ? $_POST['phone'] : NULL;
     $role = $_POST['role']; 
     
@@ -191,7 +185,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
         }
     }
 
-    // 💡 จัดการอัปโหลดรูปภาพ
     $avatar_url = null;
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
@@ -210,20 +203,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     $tab_redirect = ($role == 'User') ? 'users' : 'technicians';
 
     if (empty($user_id)) {
-        // สร้าง username เริ่มต้นให้ในระบบ
         $username = !empty($phone) ? str_replace('-', '', $phone) : 'U'.time();
         $password = '1234'; 
         
-        $stmt = $conn->prepare("INSERT INTO users (username, password, full_name, phone, department, role, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $username, $password, $full_name, $phone, $department, $role, $avatar_url);
+        $stmt = $conn->prepare("INSERT INTO users (username, password, full_name, eng_name, phone, department, role, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
         $msg = 'บันทึกข้อมูลสำเร็จ!';
     } else {
         if ($avatar_url) {
-            $stmt = $conn->prepare("UPDATE users SET full_name=?, phone=?, department=?, role=?, avatar_url=? WHERE id=?");
-            $stmt->bind_param("sssssi", $full_name, $phone, $department, $role, $avatar_url, $user_id);
+            $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=?, avatar_url=? WHERE id=?");
+            $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
         } else {
-            $stmt = $conn->prepare("UPDATE users SET full_name=?, phone=?, department=?, role=? WHERE id=?");
-            $stmt->bind_param("ssssi", $full_name, $phone, $department, $role, $user_id);
+            $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=? WHERE id=?");
+            $stmt->bind_param("sssssi", $full_name, $eng_name, $phone, $department, $role, $user_id);
         }
         $msg = 'อัปเดตข้อมูลสำเร็จ!';
     }
@@ -252,7 +244,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
     echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลผู้แจ้งสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
 }
 
-// ดึงรายชื่อช่างทั้งหมดสำหรับ Dropdown
 $tech_options = [];
 $tech_list_res = $conn->query("SELECT DISTINCT full_name FROM users WHERE LOWER(role) = 'technician' AND full_name IS NOT NULL AND full_name != '' ORDER BY full_name ASC");
 if($tech_list_res){
@@ -633,42 +624,6 @@ if($tech_list_res){
                     </div>
                 </div>
 
-                <h3 class="text-base font-extrabold text-amber-600 mb-3 mt-4 flex items-center"><i class="fas fa-user-clock mr-2"></i> Pending Approvals (รออนุมัติ)</h3>
-                <div class="modern-card overflow-hidden mb-8 border border-amber-200">
-                    <div class="overflow-x-auto w-full">
-                        <table class="w-full text-left whitespace-nowrap min-w-[700px]">
-                            <thead class="bg-amber-50 border-b border-amber-100 text-amber-700 text-xs uppercase tracking-widest font-bold">
-                                <tr>
-                                    <th class="px-6 py-4">Name</th>
-                                    <th class="px-6 py-4">Contact</th>
-                                    <th class="px-6 py-4 text-center">Status</th>
-                                    <th class="px-6 py-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm divide-y divide-amber-50 bg-white">
-                                <?php
-                                $pending_res = $conn->query("SELECT * FROM technicians WHERE approval_status = 'รออนุมัติ' ORDER BY created_at DESC");
-                                if($pending_res && $pending_res->num_rows > 0){
-                                    while($p = $pending_res->fetch_assoc()) {
-                                        echo "<tr class='hover:bg-amber-50/30 transition-colors'>
-                                            <td class='px-6 py-4 font-bold text-slate-800'>{$p['full_name']}</td>
-                                            <td class='px-6 py-4 text-slate-600 font-medium'>{$p['phone']}</td>
-                                            <td class='px-6 py-4 text-center'><span class='bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[11px] font-bold'>รออนุมัติ</span></td>
-                                            <td class='px-6 py-4 text-right'>
-                                                <div class='flex items-center justify-end space-x-2'>
-                                                    <button onclick=\"confirmAction('approve_tech', {$p['id']}, 'Approve this technician?')\" class='bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center'><i class='fas fa-check mr-1'></i> อนุมัติ</button>
-                                                    <button onclick=\"confirmAction('reject_tech', {$p['id']}, 'Reject and delete this registration?')\" class='bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center'><i class='fas fa-times mr-1'></i> ปฏิเสธ</button>
-                                                </div>
-                                            </td>
-                                        </tr>";
-                                    }
-                                } else { echo "<tr><td colspan='4' class='px-6 py-8 text-center text-slate-400'>ไม่มีรายการรออนุมัติ</td></tr>"; }
-                                ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <div>
                     <h3 class="text-base font-extrabold text-slate-700 mb-3 flex items-center">Administrators</h3>
                     <div class="modern-card overflow-hidden">
@@ -692,7 +647,13 @@ if($tech_list_res){
                                             $roleClass = ($r_lower == 'executive') ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700";
                                             $icon = ($r_lower == 'executive') ? "fa-user-tie text-amber-500" : "fa-shield-alt text-purple-500";
                                             
-                                            $js_uid = $u['id']; $js_fname = htmlspecialchars($u['full_name'] ?? '', ENT_QUOTES); $js_phone = htmlspecialchars($u['phone'] ?? '', ENT_QUOTES); $js_dept = htmlspecialchars($u['department'] ?? '', ENT_QUOTES); $js_role = htmlspecialchars($u['role'], ENT_QUOTES); $js_avatar = !empty($u['avatar_url']) ? htmlspecialchars($u['avatar_url'], ENT_QUOTES) : '';
+                                            $js_uid = $u['id']; 
+                                            $js_fname = htmlspecialchars($u['full_name'] ?? '', ENT_QUOTES); 
+                                            $js_eng = htmlspecialchars($u['eng_name'] ?? '', ENT_QUOTES); // 💡 ส่งค่า eng_name
+                                            $js_phone = htmlspecialchars($u['phone'] ?? '', ENT_QUOTES); 
+                                            $js_dept = htmlspecialchars($u['department'] ?? '', ENT_QUOTES); 
+                                            $js_role = htmlspecialchars($u['role'], ENT_QUOTES); 
+                                            $js_avatar = !empty($u['avatar_url']) ? htmlspecialchars($u['avatar_url'], ENT_QUOTES) : '';
 
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
                                                 <td class='px-6 py-4 text-slate-800 font-bold'>
@@ -705,7 +666,7 @@ if($tech_list_res){
                                                 <td class='px-6 py-4 text-center'><span class='px-3 py-1 rounded-full text-[10px] font-bold {$roleClass}'>{$roleDisplay}</span></td>
                                                 <td class='px-6 py-4 text-right'>
                                                     <div class='flex items-center justify-end space-x-2'>
-                                                        <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_fname', '$js_phone', '$js_dept', '$js_avatar')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
+                                                        <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_fname', '$js_eng', '$js_phone', '$js_dept', '$js_avatar')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
                                                         <button onclick=\"confirmDelete('user', {$u['id']})\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center'><i class='fas fa-trash-alt'></i></button>
                                                     </div>
                                                 </td>
@@ -739,7 +700,13 @@ if($tech_list_res){
                                     
                                     if($tech_res && $tech_res->num_rows > 0){
                                         while($t = $tech_res->fetch_assoc()) {
-                                            $js_uid = $t['id']; $js_fname = htmlspecialchars($t['full_name'] ?? '', ENT_QUOTES); $js_phone = htmlspecialchars($t['phone'] ?? '', ENT_QUOTES); $js_dept = htmlspecialchars($t['department'] ?? '', ENT_QUOTES); $js_role = htmlspecialchars($t['role'], ENT_QUOTES); $js_avatar = !empty($t['avatar_url']) ? htmlspecialchars($t['avatar_url'], ENT_QUOTES) : '';
+                                            $js_uid = $t['id']; 
+                                            $js_fname = htmlspecialchars($t['full_name'] ?? '', ENT_QUOTES); 
+                                            $js_eng = htmlspecialchars($t['eng_name'] ?? '', ENT_QUOTES); // 💡 ส่งค่า eng_name
+                                            $js_phone = htmlspecialchars($t['phone'] ?? '', ENT_QUOTES); 
+                                            $js_dept = htmlspecialchars($t['department'] ?? '', ENT_QUOTES); 
+                                            $js_role = htmlspecialchars($t['role'], ENT_QUOTES); 
+                                            $js_avatar = !empty($t['avatar_url']) ? htmlspecialchars($t['avatar_url'], ENT_QUOTES) : '';
                                             
                                             $total_jobs = 0;
                                             if(!empty($t['full_name'])) {
@@ -761,7 +728,7 @@ if($tech_list_res){
                                                 <td class='px-6 py-4 text-right'>
                                                     <div class='flex items-center justify-end space-x-2'>
                                                         <button onclick=\"viewHistory('{$js_fname}', 'technician')\" class='bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm'><i class='fas fa-eye md:mr-1'></i> <span class='hidden md:inline'>View</span></button>
-                                                        <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_fname', '$js_phone', '$js_dept', '$js_avatar')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
+                                                        <button onclick=\"openTechAdminModal('{$js_role}', '$js_uid', '$js_fname', '$js_eng', '$js_phone', '$js_dept', '$js_avatar')\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center'><i class='fas fa-edit'></i></button>
                                                         <button onclick=\"confirmDelete('user', {$t['id']})\" class='w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center'><i class='fas fa-trash-alt'></i></button>
                                                     </div>
                                                 </td>
@@ -784,16 +751,16 @@ if($tech_list_res){
                 </div>
 
                 <?php 
-                // 💡 เปลี่ยนให้ระบบการ์ดดึงข้อมูลช่างและรูปภาพมาจากฐานข้อมูลโดยตรง
                 $departments_data = [];
-                $tech_q = $conn->query("SELECT full_name, department, phone, avatar_url FROM users WHERE LOWER(role) = 'technician' ORDER BY department, full_name");
+                // 💡 ดึง eng_name มาโชว์ในการ์ด
+                $tech_q = $conn->query("SELECT full_name, eng_name, department, phone, avatar_url FROM users WHERE LOWER(role) = 'technician' ORDER BY department, full_name");
                 if($tech_q && $tech_q->num_rows > 0) {
                     while($row = $tech_q->fetch_assoc()) {
                         $dept = !empty($row['department']) ? $row['department'] : 'ฝ่ายงานทั่วไป';
                         if(!isset($departments_data[$dept])) { $departments_data[$dept] = []; }
                         $departments_data[$dept][] = [
                             'th' => $row['full_name'],
-                            'eng' => 'Technician',
+                            'eng' => !empty($row['eng_name']) ? $row['eng_name'] : 'Technician',
                             'phone' => $row['phone'],
                             'img' => !empty($row['avatar_url']) ? $row['avatar_url'] : 'https://api.dicebear.com/7.x/notionists/svg?seed=' . urlencode($row['full_name']) . '&backgroundColor=e2e8f0'
                         ];
@@ -1017,18 +984,16 @@ if($tech_list_res){
         <div class="modal-overlay absolute w-full h-full bg-slate-900/40 backdrop-blur-sm" onclick="toggleModal('techAdminModal')"></div>
         <div class="modal-container bg-white w-full max-w-md mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] transform transition-all">
             <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl sticky top-0 z-10">
-                <p class="text-lg font-extrabold text-slate-800" id="techAdminModalTitle">Add Member</p>
+                <p class="text-lg font-extrabold text-slate-800" id="techAdminModalTitle">Manage Technician</p>
                 <button onclick="toggleModal('techAdminModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
             </div>
-            <!-- 💡 เพิ่ม enctype ให้ฟอร์มสามารถอัปโหลดไฟล์รูปภาพได้ -->
             <form action="" method="POST" enctype="multipart/form-data" class="p-6">
                 <input type="hidden" name="save_user" value="1">
                 <input type="hidden" name="user_id" id="techAdmin_id" value="">
-                <input type="hidden" name="role" id="techAdmin_role" value="">
+                <input type="hidden" name="role" id="techAdmin_role" value="Technician">
                 
                 <div class="space-y-5">
                     
-                    <!-- 💡 เพิ่มช่องอัปโหลดรูปภาพ -->
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Profile Picture (รูปภาพ)</label>
                         <div class="flex items-center gap-4">
@@ -1047,8 +1012,15 @@ if($tech_list_res){
 
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
-                        <input type="text" name="full_name" id="techAdmin_fullname" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium">
+                        <input type="text" name="full_name" id="techAdmin_fullname" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium">
                     </div>
+                    
+                    <!-- 💡 เพิ่มช่องกรอกชื่อภาษาอังกฤษ (English Name) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">English Name</label>
+                        <input type="text" name="eng_name" id="techAdmin_engname" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium" placeholder="เช่น Mr. Somporn Wongchampa">
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phone</label>
                         <input type="text" name="phone" id="techAdmin_phone" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium">
@@ -1058,10 +1030,9 @@ if($tech_list_res){
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department</label>
                         <select name="department_select" id="techAdmin_department_select" onchange="toggleCustomDept(this, 'techAdmin_department_custom')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium mb-2">
                             <option value="" disabled selected>-- Select Department --</option>
-                            <option value="แผนกช่าง">แผนกช่าง</option>
-                            <option value="แผนกไฟฟ้า">แผนกไฟฟ้า</option>
-                            <option value="แผนกโสต">แผนกโสต</option>
-                            <option value="แม่บ้าน">แม่บ้าน</option>
+                            <option value="ฝ่ายงานบริการเทคโนโลยีดิจิทัล">ฝ่ายงานบริการเทคโนโลยีดิจิทัล</option>
+                            <option value="ฝ่ายงานโสตทัศนูปกรณ์">ฝ่ายงานโสตทัศนูปกรณ์</option>
+                            <option value="ฝ่ายงานยานยนต์">ฝ่ายงานยานยนต์</option>
                             <option value="อื่นๆ">อื่นๆ (Custom)</option>
                         </select>
                         <input type="text" name="department_custom" id="techAdmin_department_custom" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 hidden focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium" placeholder="Specify department">
@@ -1313,7 +1284,6 @@ if($tech_list_res){
             });
         }
 
-        // 💡 ฟังก์ชันพรีวิวรูปภาพก่อนบันทึก
         function previewImage(input, previewId) {
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
@@ -1352,7 +1322,8 @@ if($tech_list_res){
             document.getElementById('asset_id').value = id; document.getElementById('asset_code').value = c; document.getElementById('asset_name').value = n; document.getElementById('asset_category').value = cat; document.getElementById('asset_status').value = s; toggleModal('assetModal'); 
         }
 
-        function openTechAdminModal(role, id='', f='', p='', d='', avatar_url='') { 
+        // 💡 อัปเดตฟังก์ชันให้รับ parameter eng_name
+        function openTechAdminModal(role, id='', f='', eng='', p='', d='', avatar_url='') { 
             let isManagement = (role.toLowerCase() === 'admin' || role.toLowerCase() === 'executive');
             let baseRole = isManagement ? 'Admin' : 'Technician';
             let title = isManagement ? 'Manage Administrator' : 'Manage Technician';
@@ -1368,14 +1339,14 @@ if($tech_list_res){
 
             document.getElementById('techAdmin_id').value = id; 
             document.getElementById('techAdmin_fullname').value = f; 
+            document.getElementById('techAdmin_engname').value = eng; // 💡 ใส่ค่า English Name ลงใน input
             document.getElementById('techAdmin_phone').value = p; 
             
-            // เคลียร์ไฟล์รูป และอัปเดตรูป Preview
             document.getElementById('techAdmin_avatar').value = '';
             if (avatar_url !== '') {
                 document.getElementById('preview_avatar').src = avatar_url;
             } else {
-                document.getElementById('preview_avatar').src = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + (f !== '' ? f : 'user') + '&backgroundColor=e2e8f0';
+                document.getElementById('preview_avatar').src = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + (f !== '' ? encodeURIComponent(f) : 'user') + '&backgroundColor=e2e8f0';
             }
             
             document.getElementById('techAdmin_department_select').name = "department_select"; document.getElementById('techAdmin_department_custom').name = "department_custom";
@@ -1480,19 +1451,6 @@ if($tech_list_res){
             Swal.fire({ title: 'Delete this person?', text: "All past reporter names will be cleared!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Yes, delete!' }).then((r) => { if(r.isConfirmed) window.location.href = 'dashboard.php?delete_reporter=' + encodeURIComponent(name); }); 
         }
 
-        function confirmAction(action, id, textMsg) {
-            Swal.fire({ 
-                title: 'ยืนยันการทำรายการ?', 
-                text: textMsg, 
-                icon: 'warning', 
-                showCancelButton: true, 
-                confirmButtonColor: '#4f46e5', 
-                confirmButtonText: 'ใช่, ดำเนินการ!',
-                cancelButtonText: 'ยกเลิก'
-            }).then((r) => { 
-                if(r.isConfirmed) window.location.href = 'dashboard.php?'+action+'=' + id; 
-            });
-        }
     </script>
 </body>
 </html>
