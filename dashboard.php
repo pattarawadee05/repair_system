@@ -290,6 +290,30 @@ if($tech_list_res){
         $tech_options[] = $t['full_name'];
     }
 }
+
+// 💡 สร้างชุดข้อมูลเก็บ "ตำแหน่ง" ของช่างแต่ละคนตามรายชื่อ
+$custom_job_titles = [
+    // ฝ่ายงานบริการเทคโนโลยีดิจิทัล
+    "นาย สมพร วงษ์จำปา" => "นักวิชาการคอมพิวเตอร์",
+    "นาย ปริญญา จันทรภา" => "นักวิชาการคอมพิวเตอร์",
+    "นาย ทองสน พลมีศักดิ์" => "นักวิชาการคอมพิวเตอร์",
+    "นาย ธีรศักดิ์ พาโคกทม" => "นักวิชาการคอมพิวเตอร์",
+    // ฝ่ายงานโสตทัศนูปกรณ์
+    "นาย จิตรณรงค์ นาใจคง" => "นักวิชาการโสตทัศนศึกษา",
+    "นาย ลำไพร ทองบ่อ" => "นักวิชาการโสตทัศนศึกษา",
+    "นาย รักชาติ แดงเทโพธิ์" => "นักวิชาการโสตทัศนศึกษา",
+    "นาย ปิยะสันต์ บุญพระ" => "นักวิชาการโสตทัศนศึกษา",
+    "นาย จตุพล ฤทธิสิงห์" => "เจ้าหน้าที่บริหารงานทั่วไป",
+    "นาย อาทิตย์ บรรเทา" => "เจ้าหน้าที่บริหารงานทั่วไป",
+    // ฝ่ายงานยานยนต์
+    "นาย ธวัชชัย รัสสมบัติ" => "เจ้าหน้าที่บริหารงานทั่วไป",
+    "นาย ทรงภพ จันทร์ลอย" => "เจ้าหน้าที่บริหารงานทั่วไป",
+    "นาย รนภักดี ลิงลม" => "พนักงานขับรถยนต์",
+    "นาย กิตติภณ รัดถา" => "พนักงานขับรถยนต์",
+    "นาย ทิวา เนื่องทะบาล" => "พนักงานขับรถยนต์",
+    "นาย นิรุตติ์ กองเงิน" => "พนักงานขับรถยนต์",
+    "นาย อุทัย หาหอม" => "พนักงานขับรถยนต์"
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -385,6 +409,7 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
+            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -689,7 +714,6 @@ if($tech_list_res){
                                             $js_role = htmlspecialchars($u['role'], ENT_QUOTES); 
                                             $js_avatar = !empty($u['avatar_url']) ? htmlspecialchars($u['avatar_url'], ENT_QUOTES) : '';
 
-                                            // 💡 ปัดบรรทัดใหม่ตรงเบอร์โทร
                                             $clean_phone = str_replace(', ', ',', $u['phone'] ?? '');
                                             $display_phone = !empty($clean_phone) ? str_replace(',', ',<br>', htmlspecialchars($clean_phone, ENT_QUOTES)) : '-';
 
@@ -756,7 +780,6 @@ if($tech_list_res){
                                                 if($job_res) $total_jobs = $job_res->fetch_assoc()['c'];
                                             }
 
-                                            // 💡 ปัดบรรทัดใหม่ตรงเบอร์โทร
                                             $clean_phone = str_replace(', ', ',', $t['phone'] ?? '');
                                             $display_phone = !empty($clean_phone) ? str_replace(',', ',<br>', htmlspecialchars($clean_phone, ENT_QUOTES)) : '-';
 
@@ -805,9 +828,15 @@ if($tech_list_res){
                     while($row = $tech_q->fetch_assoc()) {
                         $dept = !empty($row['department']) ? $row['department'] : 'ฝ่ายงานทั่วไป';
                         if(!isset($departments_data[$dept])) { $departments_data[$dept] = []; }
+                        
+                        // 💡 นำรายชื่อช่างแต่ละคนมาเช็คหา "ตำแหน่งงาน" ที่ถูกต้อง
+                        $t_name = $row['full_name'];
+                        $j_title = isset($custom_job_titles[$t_name]) ? $custom_job_titles[$t_name] : 'Technician';
+
                         $departments_data[$dept][] = [
                             'th' => $row['full_name'],
                             'eng' => !empty($row['eng_name']) ? $row['eng_name'] : 'Technician',
+                            'job_title' => $j_title, // 💡 เก็บค่าตำแหน่งเพิ่มเข้ามา
                             'phone' => $row['phone'],
                             'img' => !empty($row['avatar_url']) ? $row['avatar_url'] : 'https://api.dicebear.com/7.x/notionists/svg?seed=' . urlencode($row['full_name']) . '&backgroundColor=e2e8f0'
                         ];
@@ -845,8 +874,13 @@ if($tech_list_res){
                                     <p class="text-[11px] font-medium text-slate-400 italic mt-0.5">
                                         <?php echo htmlspecialchars($tech['eng']); ?>
                                     </p>
+                                    
+                                    <!-- 💡 แสดงผลตำแหน่งงานใต้ชื่อภาษาอังกฤษ -->
+                                    <p class="text-[10px] font-bold text-indigo-500 mt-1.5 bg-indigo-50 inline-block px-2 py-0.5 rounded">
+                                        <?php echo htmlspecialchars($tech['job_title']); ?>
+                                    </p>
+
                                     <?php if (!empty($tech['phone'])): 
-                                        // 💡 ปัดบรรทัดใหม่ในการ์ดด้วย
                                         $clean_phone_card = str_replace(', ', ',', $tech['phone']);
                                         $display_phone_card = str_replace(',', ',<br>', htmlspecialchars($clean_phone_card, ENT_QUOTES));
                                     ?>
