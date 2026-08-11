@@ -167,7 +167,7 @@ if (isset($_GET['delete_user'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
-    $user_id = $_POST['user_id'];
+    $user_id = trim($_POST['user_id']); // 💡 ดึง ID มาเช็คแบบเคลียร์ช่องว่าง
     
     $full_name = !empty($_POST['full_name']) ? $_POST['full_name'] : NULL;
     $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; 
@@ -209,6 +209,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
         $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
         $msg = 'บันทึกข้อมูลสำเร็จ!';
     } else {
+        // 💡 อัปเดตข้อมูลแยกกรณีมีการเปลี่ยนรูปภาพหรือไม่
         if ($avatar_url) {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=?, avatar_url=? WHERE id=?");
             $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
@@ -221,6 +222,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     
     if ($stmt->execute()) {
         echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: '$msg', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=$tab_redirect'; }); });</script>";
+    } else {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: '".$conn->error."', confirmButtonColor: '#ef4444' }); });</script>";
     }
 }
 
@@ -986,6 +989,7 @@ if($tech_list_res){
                 <button onclick="toggleModal('techAdminModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data" class="p-6">
+                <!-- 💡 เพิ่ม input hidden สำหรับรับ ID ให้ถูกต้อง -->
                 <input type="hidden" name="save_user" value="1">
                 <input type="hidden" name="user_id" id="techAdmin_id" value="">
                 <input type="hidden" name="role" id="techAdmin_role" value="Technician">
