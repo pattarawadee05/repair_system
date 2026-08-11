@@ -992,7 +992,6 @@ if($tech_list_res){
                 
                 <div class="space-y-5">
                     
-                    <!-- 💡 เปลี่ยนดีไซน์ช่องอัปโหลดรูปภาพให้สวยและใหญ่ขึ้น -->
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Profile Picture (รูปภาพ)</label>
                         <div class="flex flex-col sm:flex-row items-center gap-5 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
@@ -1403,7 +1402,7 @@ if($tech_list_res){
                         if (itTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
                         else if (avTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
                         else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
-                        else deptEng = "<span class='px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
+                        else deptEng = "<span class='px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
                     }
 
                     tbody.innerHTML += `<tr class="hover:bg-slate-50/50 transition-colors">
