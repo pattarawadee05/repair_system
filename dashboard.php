@@ -385,7 +385,6 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
-            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -690,7 +689,10 @@ if($tech_list_res){
                                             $js_role = htmlspecialchars($u['role'], ENT_QUOTES); 
                                             $js_avatar = !empty($u['avatar_url']) ? htmlspecialchars($u['avatar_url'], ENT_QUOTES) : '';
 
-                                            // 💡 ปรับให้ตารางแสดงชื่ออังกฤษใต้ชื่อไทย
+                                            // 💡 ปัดบรรทัดใหม่ตรงเบอร์โทร
+                                            $clean_phone = str_replace(', ', ',', $u['phone'] ?? '');
+                                            $display_phone = !empty($clean_phone) ? str_replace(',', ',<br>', htmlspecialchars($clean_phone, ENT_QUOTES)) : '-';
+
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
                                                 <td class='px-6 py-4'>
                                                     <div class='flex items-center'>
@@ -701,7 +703,7 @@ if($tech_list_res){
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class='px-6 py-4 text-slate-500 font-medium'>".(!empty($u['phone']) ? $u['phone'] : '-')."</td>
+                                                <td class='px-6 py-4 text-slate-500 font-medium'>{$display_phone}</td>
                                                 <td class='px-6 py-4 text-center'><span class='px-3 py-1 rounded-full text-[10px] font-bold {$roleClass}'>{$roleDisplay}</span></td>
                                                 <td class='px-6 py-4 text-right'>
                                                     <div class='flex items-center justify-end space-x-2'>
@@ -754,7 +756,10 @@ if($tech_list_res){
                                                 if($job_res) $total_jobs = $job_res->fetch_assoc()['c'];
                                             }
 
-                                            // 💡 ปรับให้ตารางแสดงชื่ออังกฤษใต้ชื่อไทย
+                                            // 💡 ปัดบรรทัดใหม่ตรงเบอร์โทร
+                                            $clean_phone = str_replace(', ', ',', $t['phone'] ?? '');
+                                            $display_phone = !empty($clean_phone) ? str_replace(',', ',<br>', htmlspecialchars($clean_phone, ENT_QUOTES)) : '-';
+
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
                                                 <td class='px-6 py-4'>
                                                     <div class='flex items-center'>
@@ -765,7 +770,7 @@ if($tech_list_res){
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class='px-6 py-4 text-slate-500 font-medium'>".(!empty($t['phone']) ? $t['phone'] : '-')."</td> 
+                                                <td class='px-6 py-4 text-slate-500 font-medium'>{$display_phone}</td> 
                                                 <td class='px-6 py-4 text-slate-500 font-medium'>".(!empty($t['department']) ? $t['department'] : '-')."</td>
                                                 <td class='px-6 py-4 text-center'><span class='px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600'>{$total_jobs}</span></td>
                                                 <td class='px-6 py-4 text-right'>
@@ -777,7 +782,7 @@ if($tech_list_res){
                                                 </td>
                                             </tr>";
                                         }
-                                    } else { echo "<tr><td colspan='5' class='px-6 py-8 text-center text-slate-400'>No technicians found</td></tr>"; }
+                                    } else { echo "<tr><td colspan='6' class='px-6 py-8 text-center text-slate-400'>No technicians found</td></tr>"; }
                                     ?>
                                 </tbody>
                             </table>
@@ -840,11 +845,15 @@ if($tech_list_res){
                                     <p class="text-[11px] font-medium text-slate-400 italic mt-0.5">
                                         <?php echo htmlspecialchars($tech['eng']); ?>
                                     </p>
-                                    <?php if (!empty($tech['phone'])): ?>
-                                    <p class="text-xs text-indigo-600 font-semibold mt-2.5 flex items-center">
-                                        <i class="fas fa-phone text-[10px] mr-2 opacity-70"></i> 
-                                        <?php echo htmlspecialchars($tech['phone']); ?>
-                                    </p>
+                                    <?php if (!empty($tech['phone'])): 
+                                        // 💡 ปัดบรรทัดใหม่ในการ์ดด้วย
+                                        $clean_phone_card = str_replace(', ', ',', $tech['phone']);
+                                        $display_phone_card = str_replace(',', ',<br>', htmlspecialchars($clean_phone_card, ENT_QUOTES));
+                                    ?>
+                                    <div class="text-xs text-indigo-600 font-semibold mt-2.5 flex items-start">
+                                        <i class="fas fa-phone text-[10px] mr-2 mt-1 opacity-70"></i> 
+                                        <span><?php echo $display_phone_card; ?></span>
+                                    </div>
                                     <?php endif; ?>
                                 </div>
                                 <button onclick="viewHistory('<?php echo htmlspecialchars($tech['th']); ?>', 'technician')" class="w-full text-xs font-bold text-slate-600 hover:text-white bg-slate-50 hover:bg-indigo-600 border border-slate-200 hover:border-indigo-600 py-2.5 rounded-xl transition-all shadow-2xs">
