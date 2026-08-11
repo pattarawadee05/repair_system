@@ -159,12 +159,13 @@ if (isset($_GET['delete_user'])) {
     echo "<script>window.location.href='dashboard.php?tab=technicians';</script>";
 }
 
+// 💡 ส่วนสำคัญที่ปรับปรุงระบบบันทึกใหม่
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
-    $user_id = trim($_POST['user_id']);
-    $full_name = !empty($_POST['full_name']) ? $_POST['full_name'] : NULL;
-    $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; 
-    $phone = !empty($_POST['phone']) ? $_POST['phone'] : NULL;
-    $role = $_POST['role']; 
+    $user_id = isset($_POST['user_id']) ? trim($_POST['user_id']) : '';
+    $full_name = isset($_POST['full_name']) && trim($_POST['full_name']) !== '' ? trim($_POST['full_name']) : NULL;
+    $eng_name = isset($_POST['eng_name']) && trim($_POST['eng_name']) !== '' ? trim($_POST['eng_name']) : NULL; 
+    $phone = isset($_POST['phone']) && trim($_POST['phone']) !== '' ? trim($_POST['phone']) : NULL;
+    $role = isset($_POST['role']) ? $_POST['role'] : 'User'; 
     
     if (isset($_POST['admin_level']) && ($role === 'Admin' || $role === 'Executive')) {
         $role = $_POST['admin_level'];
@@ -172,7 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     } else {
         $department = isset($_POST['department_select']) ? $_POST['department_select'] : NULL;
         if ($department === 'อื่นๆ' && !empty($_POST['department_custom'])) {
-            $department = $_POST['department_custom'];
+            $department = trim($_POST['department_custom']);
         }
     }
 
@@ -192,29 +193,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     }
 
     $tab_redirect = ($role == 'User') ? 'users' : 'technicians';
+    $error_msg = null;
+    $stmt = null;
 
     if (empty($user_id)) {
         $username = !empty($phone) ? str_replace('-', '', $phone) : 'U'.time();
         $password = '1234'; 
         
         $stmt = $conn->prepare("INSERT INTO users (username, password, full_name, eng_name, phone, department, role, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
-        $msg = 'บันทึกข้อมูลสำเร็จ!';
+        if ($stmt) {
+            $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
+            $msg = 'เพิ่มรายชื่อใหม่สำเร็จ!';
+        } else {
+            $error_msg = "Database Error (Insert): " . $conn->error;
+        }
     } else {
         if ($avatar_url) {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=?, avatar_url=? WHERE id=?");
-            $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
+            if ($stmt) {
+                $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
+            } else {
+                $error_msg = "Database Error (Update 1): " . $conn->error;
+            }
         } else {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=? WHERE id=?");
-            $stmt->bind_param("sssssi", $full_name, $eng_name, $phone, $department, $role, $user_id);
+            if ($stmt) {
+                $stmt->bind_param("sssssi", $full_name, $eng_name, $phone, $department, $role, $user_id);
+            } else {
+                $error_msg = "Database Error (Update 2): " . $conn->error;
+            }
         }
         $msg = 'อัปเดตข้อมูลสำเร็จ!';
     }
     
-    if ($stmt->execute()) {
-        echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: '$msg', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=$tab_redirect'; }); });</script>";
+    if ($error_msg) {
+        echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'พบข้อผิดพลาดของฐานข้อมูล!', text: '".addslashes($error_msg)."', confirmButtonColor: '#ef4444' }); });</script>";
     } else {
-        echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: '".$conn->error."', confirmButtonColor: '#ef4444' }); });</script>";
+        if ($stmt->execute()) {
+            echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: '$msg', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=$tab_redirect'; }); });</script>";
+        } else {
+            echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ!', text: '".addslashes($stmt->error)."', confirmButtonColor: '#ef4444' }); });</script>";
+        }
     }
 }
 
@@ -284,7 +303,6 @@ if($tech_list_res){
 
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar สีขาว มินิมอล -->
     <aside id="sidebar" class="bg-white flex flex-col shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 border-r border-slate-100 no-print">
         <div class="sidebar-logo-box flex items-center border-b border-slate-50">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mr-3 shrink-0">
@@ -315,7 +333,6 @@ if($tech_list_res){
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[#f8fafc]">
         
-        <!-- Header สีขาว มินิมอล -->
         <header class="top-header bg-white/80 backdrop-blur-md flex items-center justify-between z-10 sticky top-0 no-print border-b border-slate-100">
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="md:hidden mr-4 text-slate-500 hover:text-indigo-600 focus:outline-none">
@@ -341,7 +358,6 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
-            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -400,7 +416,6 @@ if($tech_list_res){
                     </div>
                 </div>
 
-                <!-- แถวที่ 2: กราฟ -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 modern-card p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-6">
@@ -426,7 +441,6 @@ if($tech_list_res){
                     </div>
                 </div>
 
-                <!-- แถวที่ 3: ตาราง Recent Transactions บนหน้า Overview -->
                 <div class="grid grid-cols-1 gap-6">
                     <div class="modern-card overflow-hidden flex flex-col">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -708,7 +722,6 @@ if($tech_list_res){
                                                 if($job_res) $total_jobs = $job_res->fetch_assoc()['c'];
                                             }
 
-                                            // 💡 จุดสำคัญ: ตรงนี้คือโค้ดปุ่ม Edit ที่ต้องส่ง $js_eng เข้าไปในฟังก์ชัน
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
                                                 <td class='px-6 py-4 text-slate-800 font-bold'>
                                                     <div class='flex items-center'>
@@ -1321,19 +1334,28 @@ if($tech_list_res){
             let isManagement = (role.toLowerCase() === 'admin' || role.toLowerCase() === 'executive');
             let baseRole = isManagement ? 'Admin' : 'Technician';
             let title = isManagement ? 'Manage Administrator' : 'Manage Technician';
-            document.getElementById('techAdminModalTitle').innerHTML = title; document.getElementById('techAdmin_role').value = baseRole; 
+            document.getElementById('techAdminModalTitle').innerHTML = title; 
+            document.getElementById('techAdmin_role').value = baseRole; 
             
-            const adminLevelDiv = document.getElementById('adminLevelDiv'); const deptDiv = document.getElementById('deptDiv');
+            const adminLevelDiv = document.getElementById('adminLevelDiv'); 
+            const deptDiv = document.getElementById('deptDiv');
+            
             if(isManagement) {
-                adminLevelDiv.classList.remove('hidden'); deptDiv.classList.add('hidden'); document.getElementById('techAdmin_department_select').required = false;
-                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; document.getElementById('techAdmin_level').value = exactRole;
+                adminLevelDiv.classList.remove('hidden'); 
+                deptDiv.classList.add('hidden'); 
+                document.getElementById('techAdmin_department_select').required = false;
+                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; 
+                document.getElementById('techAdmin_level').value = exactRole;
             } else {
-                adminLevelDiv.classList.add('hidden'); deptDiv.classList.remove('hidden'); document.getElementById('techAdmin_department_select').required = true;
+                adminLevelDiv.classList.add('hidden'); 
+                deptDiv.classList.remove('hidden'); 
+                document.getElementById('techAdmin_department_select').required = true;
             }
 
+            // 💡 แก้ไขดึงค่า ID และ English Name ให้ถูกต้อง
             document.getElementById('techAdmin_id').value = id; 
             document.getElementById('techAdmin_fullname').value = f; 
-            document.getElementById('techAdmin_engname').value = eng;
+            document.getElementById('techAdmin_engname').value = eng; 
             document.getElementById('techAdmin_phone').value = p; 
             
             document.getElementById('techAdmin_avatar').value = '';
@@ -1343,7 +1365,8 @@ if($tech_list_res){
                 document.getElementById('preview_avatar').src = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + (f !== '' ? encodeURIComponent(f) : 'user') + '&backgroundColor=e2e8f0';
             }
             
-            document.getElementById('techAdmin_department_select').name = "department_select"; document.getElementById('techAdmin_department_custom').name = "department_custom";
+            document.getElementById('techAdmin_department_select').name = "department_select"; 
+            document.getElementById('techAdmin_department_custom').name = "department_custom";
             setDropdownOrCustom('techAdmin_department_select', 'techAdmin_department_custom', d);
             toggleModal('techAdminModal'); 
         }
@@ -1396,7 +1419,7 @@ if($tech_list_res){
                         
                         if (itTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
                         else if (avTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
-                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
+                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
                         else deptEng = "<span class='px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
                     }
 
