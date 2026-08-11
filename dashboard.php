@@ -63,7 +63,6 @@ if($check_fullname && $check_fullname->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
 }
 
-// 💡 เพิ่มคอลัมน์ eng_name เข้าตาราง users อัตโนมัติ
 $check_eng_name = $conn->query("SHOW COLUMNS FROM users LIKE 'eng_name'");
 if($check_eng_name && $check_eng_name->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN eng_name VARCHAR(100) NULL AFTER full_name");
@@ -171,7 +170,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     $user_id = $_POST['user_id'];
     
     $full_name = !empty($_POST['full_name']) ? $_POST['full_name'] : NULL;
-    $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; // 💡 รับค่า English Name
+    $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; 
     $phone = !empty($_POST['phone']) ? $_POST['phone'] : NULL;
     $role = $_POST['role']; 
     
@@ -649,7 +648,7 @@ if($tech_list_res){
                                             
                                             $js_uid = $u['id']; 
                                             $js_fname = htmlspecialchars($u['full_name'] ?? '', ENT_QUOTES); 
-                                            $js_eng = htmlspecialchars($u['eng_name'] ?? '', ENT_QUOTES); // 💡 ส่งค่า eng_name
+                                            $js_eng = htmlspecialchars($u['eng_name'] ?? '', ENT_QUOTES); 
                                             $js_phone = htmlspecialchars($u['phone'] ?? '', ENT_QUOTES); 
                                             $js_dept = htmlspecialchars($u['department'] ?? '', ENT_QUOTES); 
                                             $js_role = htmlspecialchars($u['role'], ENT_QUOTES); 
@@ -702,7 +701,7 @@ if($tech_list_res){
                                         while($t = $tech_res->fetch_assoc()) {
                                             $js_uid = $t['id']; 
                                             $js_fname = htmlspecialchars($t['full_name'] ?? '', ENT_QUOTES); 
-                                            $js_eng = htmlspecialchars($t['eng_name'] ?? '', ENT_QUOTES); // 💡 ส่งค่า eng_name
+                                            $js_eng = htmlspecialchars($t['eng_name'] ?? '', ENT_QUOTES); 
                                             $js_phone = htmlspecialchars($t['phone'] ?? '', ENT_QUOTES); 
                                             $js_dept = htmlspecialchars($t['department'] ?? '', ENT_QUOTES); 
                                             $js_role = htmlspecialchars($t['role'], ENT_QUOTES); 
@@ -752,7 +751,6 @@ if($tech_list_res){
 
                 <?php 
                 $departments_data = [];
-                // 💡 ดึง eng_name มาโชว์ในการ์ด
                 $tech_q = $conn->query("SELECT full_name, eng_name, department, phone, avatar_url FROM users WHERE LOWER(role) = 'technician' ORDER BY department, full_name");
                 if($tech_q && $tech_q->num_rows > 0) {
                     while($row = $tech_q->fetch_assoc()) {
@@ -994,11 +992,15 @@ if($tech_list_res){
                 
                 <div class="space-y-5">
                     
+                    <!-- 💡 เปลี่ยนดีไซน์ช่องอัปโหลดรูปภาพให้สวยและใหญ่ขึ้น -->
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Profile Picture (รูปภาพ)</label>
-                        <div class="flex items-center gap-4">
-                            <img id="preview_avatar" src="https://api.dicebear.com/7.x/notionists/svg?seed=user&backgroundColor=e2e8f0" class="w-16 h-16 rounded-full object-cover border-2 border-indigo-100 shadow-sm">
-                            <input type="file" name="avatar" id="techAdmin_avatar" accept="image/jpeg, image/png, image/jpg" onchange="previewImage(this, 'preview_avatar')" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer">
+                        <div class="flex flex-col sm:flex-row items-center gap-5 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                            <img id="preview_avatar" src="https://api.dicebear.com/7.x/notionists/svg?seed=user&backgroundColor=e2e8f0" class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-md ring-1 ring-slate-200 shrink-0 bg-slate-200">
+                            <div class="w-full">
+                                <input type="file" name="avatar" id="techAdmin_avatar" accept="image/jpeg, image/png, image/jpg" onchange="previewImage(this, 'preview_avatar')" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer transition-all">
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">แนะนำขนาด 1:1 หรือ 4:5 (JPG, PNG)</p>
+                            </div>
                         </div>
                     </div>
 
@@ -1015,7 +1017,6 @@ if($tech_list_res){
                         <input type="text" name="full_name" id="techAdmin_fullname" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium">
                     </div>
                     
-                    <!-- 💡 เพิ่มช่องกรอกชื่อภาษาอังกฤษ (English Name) -->
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">English Name</label>
                         <input type="text" name="eng_name" id="techAdmin_engname" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:outline-none font-medium" placeholder="เช่น Mr. Somporn Wongchampa">
@@ -1322,7 +1323,6 @@ if($tech_list_res){
             document.getElementById('asset_id').value = id; document.getElementById('asset_code').value = c; document.getElementById('asset_name').value = n; document.getElementById('asset_category').value = cat; document.getElementById('asset_status').value = s; toggleModal('assetModal'); 
         }
 
-        // 💡 อัปเดตฟังก์ชันให้รับ parameter eng_name
         function openTechAdminModal(role, id='', f='', eng='', p='', d='', avatar_url='') { 
             let isManagement = (role.toLowerCase() === 'admin' || role.toLowerCase() === 'executive');
             let baseRole = isManagement ? 'Admin' : 'Technician';
@@ -1339,7 +1339,7 @@ if($tech_list_res){
 
             document.getElementById('techAdmin_id').value = id; 
             document.getElementById('techAdmin_fullname').value = f; 
-            document.getElementById('techAdmin_engname').value = eng; // 💡 ใส่ค่า English Name ลงใน input
+            document.getElementById('techAdmin_engname').value = eng;
             document.getElementById('techAdmin_phone').value = p; 
             
             document.getElementById('techAdmin_avatar').value = '';
@@ -1451,6 +1451,19 @@ if($tech_list_res){
             Swal.fire({ title: 'Delete this person?', text: "All past reporter names will be cleared!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Yes, delete!' }).then((r) => { if(r.isConfirmed) window.location.href = 'dashboard.php?delete_reporter=' + encodeURIComponent(name); }); 
         }
 
+        function confirmAction(action, id, textMsg) {
+            Swal.fire({ 
+                title: 'ยืนยันการทำรายการ?', 
+                text: textMsg, 
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#4f46e5', 
+                confirmButtonText: 'ใช่, ดำเนินการ!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((r) => { 
+                if(r.isConfirmed) window.location.href = 'dashboard.php?'+action+'=' + id; 
+            });
+        }
     </script>
 </body>
 </html>
