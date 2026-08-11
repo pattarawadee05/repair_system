@@ -1,14 +1,12 @@
 <?php 
 session_start();
 
-// 1. เช็คว่าได้ล็อกอินเข้ามาหรือยัง? 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
 
-// 2. ป้องกันผู้บริหาร (Executive) แอบเข้ามาดูหน้าจัดการช่าง
 if (strtolower($_SESSION['role']) === 'executive') {
     header("Location: executive_dashboard.php");
     exit();
@@ -16,7 +14,6 @@ if (strtolower($_SESSION['role']) === 'executive') {
 
 include 'db_connect.php';
 
-// ================= ฟังก์ชันแปลงตัวเลขเป็นเลขไทย =================
 function thaiNum($num) {
     return str_replace(
         array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
@@ -25,7 +22,6 @@ function thaiNum($num) {
     );
 }
 
-// ================= ปรับปรุงฐานข้อมูลอัตโนมัติ (Auto-Fix DB) =================
 $conn->query("CREATE TABLE IF NOT EXISTS assets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     asset_code VARCHAR(50) NOT NULL,
@@ -112,7 +108,6 @@ if($check_repairs_table && $check_repairs_table->num_rows > 0) {
                   GROUP BY reporter_name, phone_number");
 }
 
-// ================= เตรียมข้อมูลประวัติและสถิติ =================
 $all_repairs_json = "[]";
 $check_repairs_list = $conn->query("SHOW TABLES LIKE 'repairs'");
 
@@ -133,8 +128,6 @@ if($check_repairs_list && $check_repairs_list->num_rows > 0) {
         $has_image_col = true;
     }
 }
-
-// ================= จัดการข้อมูล =================
 
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
@@ -167,8 +160,7 @@ if (isset($_GET['delete_user'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
-    $user_id = trim($_POST['user_id']); // 💡 ดึง ID มาเช็คแบบเคลียร์ช่องว่าง
-    
+    $user_id = trim($_POST['user_id']);
     $full_name = !empty($_POST['full_name']) ? $_POST['full_name'] : NULL;
     $eng_name = !empty($_POST['eng_name']) ? $_POST['eng_name'] : NULL; 
     $phone = !empty($_POST['phone']) ? $_POST['phone'] : NULL;
@@ -209,7 +201,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
         $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
         $msg = 'บันทึกข้อมูลสำเร็จ!';
     } else {
-        // 💡 อัปเดตข้อมูลแยกกรณีมีการเปลี่ยนรูปภาพหรือไม่
         if ($avatar_url) {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=?, avatar_url=? WHERE id=?");
             $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
@@ -989,7 +980,6 @@ if($tech_list_res){
                 <button onclick="toggleModal('techAdminModal')" class="text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm"><i class="fas fa-times"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data" class="p-6">
-                <!-- 💡 เพิ่ม input hidden สำหรับรับ ID ให้ถูกต้อง -->
                 <input type="hidden" name="save_user" value="1">
                 <input type="hidden" name="user_id" id="techAdmin_id" value="">
                 <input type="hidden" name="role" id="techAdmin_role" value="Technician">
@@ -1405,7 +1395,7 @@ if($tech_list_res){
                         
                         if (itTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
                         else if (avTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
-                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
+                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
                         else deptEng = "<span class='px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
                     }
 
