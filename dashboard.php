@@ -22,6 +22,7 @@ function thaiNum($num) {
     );
 }
 
+// ================= ปรับปรุงฐานข้อมูลอัตโนมัติ (Auto-Fix DB) =================
 $conn->query("CREATE TABLE IF NOT EXISTS assets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     asset_code VARCHAR(50) NOT NULL,
@@ -36,7 +37,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS technicians (
     line_user_id VARCHAR(255) NULL,
     full_name VARCHAR(100) NOT NULL,
     department VARCHAR(100) NULL,
-    phone VARCHAR(50) NULL,
+    phone VARCHAR(255) NULL,
     avatar_url VARCHAR(255) NULL,
     status VARCHAR(50) DEFAULT 'ว่าง',
     approval_status VARCHAR(50) DEFAULT 'รออนุมัติ',
@@ -54,6 +55,10 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
 
 $conn->query("ALTER TABLE users MODIFY COLUMN role VARCHAR(50) DEFAULT 'User'");
 
+// 💡 ขยายความจุช่องเบอร์โทรให้รองรับข้อความยาวๆ (แก้ปัญหา Data too long)
+$conn->query("ALTER TABLE users MODIFY COLUMN phone VARCHAR(255) NULL");
+$conn->query("ALTER TABLE technicians MODIFY COLUMN phone VARCHAR(255) NULL");
+
 $check_fullname = $conn->query("SHOW COLUMNS FROM users LIKE 'full_name'");
 if($check_fullname && $check_fullname->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER username");
@@ -66,7 +71,7 @@ if($check_eng_name && $check_eng_name->num_rows == 0) {
 
 $check_phone = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
 if($check_phone && $check_phone->num_rows == 0) {
-    $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER full_name");
+    $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(255) NULL AFTER full_name");
 }
 
 $check_dept = $conn->query("SHOW COLUMNS FROM users LIKE 'department'");
@@ -129,10 +134,14 @@ if($check_repairs_list && $check_repairs_list->num_rows > 0) {
     }
 }
 
+// ================= จัดการข้อมูล (แบบใหม่ ป้องกันปัญหารีเฟรช) =================
+
 if (isset($_GET['delete_asset'])) {
     $del_id = intval($_GET['delete_asset']);
     $conn->query("DELETE FROM assets WHERE id = $del_id");
-    echo "<script>window.location.href='dashboard.php?tab=assets';</script>";
+    $_SESSION['toast'] = ['icon' => 'success', 'title' => 'ลบข้อมูลสำเร็จ!'];
+    header("Location: dashboard.php?tab=assets");
+    exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_asset'])) {
@@ -145,21 +154,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_asset'])) {
     if (empty($asset_id)) {
         $stmt = $conn->prepare("INSERT INTO assets (asset_code, asset_name, category, status) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssss", $asset_code, $asset_name, $category, $status);
+        $msg = "เพิ่มข้อมูลสินทรัพย์สำเร็จ!";
     } else {
         $stmt = $conn->prepare("UPDATE assets SET asset_code=?, asset_name=?, category=?, status=? WHERE id=?");
         $stmt->bind_param("ssssi", $asset_code, $asset_name, $category, $status, $asset_id);
+        $msg = "อัปเดตข้อมูลสินทรัพย์สำเร็จ!";
     }
-    $stmt->execute();
-    echo "<script>window.location.href='dashboard.php?tab=assets';</script>";
+    
+    if($stmt->execute()) {
+        $_SESSION['toast'] = ['icon' => 'success', 'title' => $msg];
+    } else {
+        $_SESSION['toast'] = ['icon' => 'error', 'title' => 'เกิดข้อผิดพลาด!', 'text' => $conn->error];
+    }
+    header("Location: dashboard.php?tab=assets");
+    exit();
 }
 
 if (isset($_GET['delete_user'])) {
     $del_id = intval($_GET['delete_user']);
     $conn->query("DELETE FROM users WHERE id = $del_id");
-    echo "<script>window.location.href='dashboard.php?tab=technicians';</script>";
+    $_SESSION['toast'] = ['icon' => 'success', 'title' => 'ลบข้อมูลบุคลากรสำเร็จ!'];
+    header("Location: dashboard.php?tab=technicians");
+    exit();
 }
 
-// 💡 ส่วนสำคัญที่ปรับปรุงระบบบันทึกใหม่
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
     $user_id = isset($_POST['user_id']) ? trim($_POST['user_id']) : '';
     $full_name = isset($_POST['full_name']) && trim($_POST['full_name']) !== '' ? trim($_POST['full_name']) : NULL;
@@ -205,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
             $stmt->bind_param("ssssssss", $username, $password, $full_name, $eng_name, $phone, $department, $role, $avatar_url);
             $msg = 'เพิ่มรายชื่อใหม่สำเร็จ!';
         } else {
-            $error_msg = "Database Error (Insert): " . $conn->error;
+            $error_msg = "Database Error: " . $conn->error;
         }
     } else {
         if ($avatar_url) {
@@ -213,28 +231,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_user'])) {
             if ($stmt) {
                 $stmt->bind_param("ssssssi", $full_name, $eng_name, $phone, $department, $role, $avatar_url, $user_id);
             } else {
-                $error_msg = "Database Error (Update 1): " . $conn->error;
+                $error_msg = "Database Error: " . $conn->error;
             }
         } else {
             $stmt = $conn->prepare("UPDATE users SET full_name=?, eng_name=?, phone=?, department=?, role=? WHERE id=?");
             if ($stmt) {
                 $stmt->bind_param("sssssi", $full_name, $eng_name, $phone, $department, $role, $user_id);
             } else {
-                $error_msg = "Database Error (Update 2): " . $conn->error;
+                $error_msg = "Database Error: " . $conn->error;
             }
         }
         $msg = 'อัปเดตข้อมูลสำเร็จ!';
     }
     
+    // 💡 การทำงานแบบใหม่ (PRG Pattern) เก็บสถานะไว้ใน Session แล้ว Redirect หนี
     if ($error_msg) {
-        echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'พบข้อผิดพลาดของฐานข้อมูล!', text: '".addslashes($error_msg)."', confirmButtonColor: '#ef4444' }); });</script>";
+        $_SESSION['toast'] = ['icon' => 'error', 'title' => 'พบข้อผิดพลาด!', 'text' => $error_msg];
     } else {
         if ($stmt->execute()) {
-            echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: '$msg', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=$tab_redirect'; }); });</script>";
+            $_SESSION['toast'] = ['icon' => 'success', 'title' => $msg];
         } else {
-            echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ!', text: '".addslashes($stmt->error)."', confirmButtonColor: '#ef4444' }); });</script>";
+            $_SESSION['toast'] = ['icon' => 'error', 'title' => 'บันทึกไม่สำเร็จ!', 'text' => $stmt->error];
         }
     }
+    header("Location: dashboard.php?tab=$tab_redirect");
+    exit();
 }
 
 if (isset($_GET['delete_reporter'])) {
@@ -242,7 +263,9 @@ if (isset($_GET['delete_reporter'])) {
     $stmt = $conn->prepare("DELETE FROM repairs WHERE reporter_name = ?");
     $stmt->bind_param("s", $del_name);
     $stmt->execute();
-    echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'ลบประวัติสำเร็จ!', showConfirmButton: false, timer: 1500 }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
+    $_SESSION['toast'] = ['icon' => 'success', 'title' => 'ลบประวัติสำเร็จ!'];
+    header("Location: dashboard.php?tab=users");
+    exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
@@ -252,8 +275,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_reporter'])) {
     
     $stmt = $conn->prepare("UPDATE repairs SET reporter_name = ?, phone_number = ? WHERE reporter_name = ?");
     $stmt->bind_param("sss", $new_name, $new_phone, $old_name);
-    $stmt->execute();
-    echo "<script>document.addEventListener('DOMContentLoaded', function() { Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลผู้แจ้งสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => { window.location.href='dashboard.php?tab=users'; }); });</script>";
+    
+    if($stmt->execute()){
+        $_SESSION['toast'] = ['icon' => 'success', 'title' => 'อัปเดตข้อมูลสำเร็จ!'];
+    } else {
+        $_SESSION['toast'] = ['icon' => 'error', 'title' => 'ผิดพลาด!', 'text' => $stmt->error];
+    }
+    header("Location: dashboard.php?tab=users");
+    exit();
 }
 
 $tech_options = [];
@@ -358,6 +387,7 @@ if($tech_list_res){
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
             
+            <!-- Dashboard Section -->
             <div id="dash" class="section space-y-8 animate-fade-in no-print">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <?php 
@@ -618,7 +648,7 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Team Section (จัดการระบบ) -->
+            <!-- Team Section -->
             <div id="technicians" class="section hidden space-y-6 no-print">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
@@ -750,7 +780,7 @@ if($tech_list_res){
                 </div>
             </div>
 
-            <!-- Technician Cards Section (ดึงข้อมูลจาก DB อัตโนมัติ) -->
+            <!-- Technician Cards Section -->
             <div id="team_cards" class="section hidden space-y-8 no-print">
                 <div>
                     <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Team Management (ทีมช่างผู้ดูแล)</h2>
@@ -1108,6 +1138,20 @@ if($tech_list_res){
     </div>
 
     <!-- ================== JAVASCRIPT ================== -->
+    <!-- แทรก Session Message ให้ทำงาน (แสดงผล Popup SweetAlert) -->
+    <?php if(isset($_SESSION['toast'])): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: '<?php echo $_SESSION['toast']['icon']; ?>',
+                title: '<?php echo $_SESSION['toast']['title']; ?>',
+                text: '<?php echo isset($_SESSION['toast']['text']) ? addslashes($_SESSION['toast']['text']) : ''; ?>',
+                confirmButtonColor: '#4f46e5'
+            });
+        });
+    </script>
+    <?php unset($_SESSION['toast']); endif; ?>
+
     <script>
         const allRepairs = <?php echo $all_repairs_json; ?>;
         
@@ -1334,28 +1378,19 @@ if($tech_list_res){
             let isManagement = (role.toLowerCase() === 'admin' || role.toLowerCase() === 'executive');
             let baseRole = isManagement ? 'Admin' : 'Technician';
             let title = isManagement ? 'Manage Administrator' : 'Manage Technician';
-            document.getElementById('techAdminModalTitle').innerHTML = title; 
-            document.getElementById('techAdmin_role').value = baseRole; 
+            document.getElementById('techAdminModalTitle').innerHTML = title; document.getElementById('techAdmin_role').value = baseRole; 
             
-            const adminLevelDiv = document.getElementById('adminLevelDiv'); 
-            const deptDiv = document.getElementById('deptDiv');
-            
+            const adminLevelDiv = document.getElementById('adminLevelDiv'); const deptDiv = document.getElementById('deptDiv');
             if(isManagement) {
-                adminLevelDiv.classList.remove('hidden'); 
-                deptDiv.classList.add('hidden'); 
-                document.getElementById('techAdmin_department_select').required = false;
-                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; 
-                document.getElementById('techAdmin_level').value = exactRole;
+                adminLevelDiv.classList.remove('hidden'); deptDiv.classList.add('hidden'); document.getElementById('techAdmin_department_select').required = false;
+                let exactRole = (role.toLowerCase() === 'executive') ? 'Executive' : 'Admin'; document.getElementById('techAdmin_level').value = exactRole;
             } else {
-                adminLevelDiv.classList.add('hidden'); 
-                deptDiv.classList.remove('hidden'); 
-                document.getElementById('techAdmin_department_select').required = true;
+                adminLevelDiv.classList.add('hidden'); deptDiv.classList.remove('hidden'); document.getElementById('techAdmin_department_select').required = true;
             }
 
-            // 💡 แก้ไขดึงค่า ID และ English Name ให้ถูกต้อง
             document.getElementById('techAdmin_id').value = id; 
             document.getElementById('techAdmin_fullname').value = f; 
-            document.getElementById('techAdmin_engname').value = eng; 
+            document.getElementById('techAdmin_engname').value = eng;
             document.getElementById('techAdmin_phone').value = p; 
             
             document.getElementById('techAdmin_avatar').value = '';
@@ -1365,8 +1400,7 @@ if($tech_list_res){
                 document.getElementById('preview_avatar').src = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + (f !== '' ? encodeURIComponent(f) : 'user') + '&backgroundColor=e2e8f0';
             }
             
-            document.getElementById('techAdmin_department_select').name = "department_select"; 
-            document.getElementById('techAdmin_department_custom').name = "department_custom";
+            document.getElementById('techAdmin_department_select').name = "department_select"; document.getElementById('techAdmin_department_custom').name = "department_custom";
             setDropdownOrCustom('techAdmin_department_select', 'techAdmin_department_custom', d);
             toggleModal('techAdminModal'); 
         }
