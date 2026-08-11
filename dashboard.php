@@ -708,6 +708,7 @@ if($tech_list_res){
                                                 if($job_res) $total_jobs = $job_res->fetch_assoc()['c'];
                                             }
 
+                                            // 💡 จุดสำคัญ: ตรงนี้คือโค้ดปุ่ม Edit ที่ต้องส่ง $js_eng เข้าไปในฟังก์ชัน
                                             echo "<tr class='hover:bg-slate-50/50 transition-colors'>
                                                 <td class='px-6 py-4 text-slate-800 font-bold'>
                                                     <div class='flex items-center'>
@@ -1395,7 +1396,7 @@ if($tech_list_res){
                         
                         if (itTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>IT Support</span>";
                         else if (avTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>AV Support</span>";
-                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
+                        else if (transTechs.includes(r.technician_name)) deptEng = "<span class='px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>Transport</span>";
                         else deptEng = "<span class='px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider'>General</span>";
                     }
 
