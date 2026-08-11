@@ -291,7 +291,6 @@ if($tech_list_res){
     }
 }
 
-// 💡 สร้างชุดข้อมูลเก็บ "ตำแหน่ง" ของช่างแต่ละคนตามรายชื่อ
 $custom_job_titles = [
     // ฝ่ายงานบริการเทคโนโลยีดิจิทัล
     "นาย สมพร วงษ์จำปา" => "นักวิชาการคอมพิวเตอร์",
@@ -829,14 +828,13 @@ $custom_job_titles = [
                         $dept = !empty($row['department']) ? $row['department'] : 'ฝ่ายงานทั่วไป';
                         if(!isset($departments_data[$dept])) { $departments_data[$dept] = []; }
                         
-                        // 💡 นำรายชื่อช่างแต่ละคนมาเช็คหา "ตำแหน่งงาน" ที่ถูกต้อง
                         $t_name = $row['full_name'];
                         $j_title = isset($custom_job_titles[$t_name]) ? $custom_job_titles[$t_name] : 'Technician';
 
                         $departments_data[$dept][] = [
                             'th' => $row['full_name'],
                             'eng' => !empty($row['eng_name']) ? $row['eng_name'] : 'Technician',
-                            'job_title' => $j_title, // 💡 เก็บค่าตำแหน่งเพิ่มเข้ามา
+                            'job_title' => $j_title,
                             'phone' => $row['phone'],
                             'img' => !empty($row['avatar_url']) ? $row['avatar_url'] : 'https://api.dicebear.com/7.x/notionists/svg?seed=' . urlencode($row['full_name']) . '&backgroundColor=e2e8f0'
                         ];
@@ -868,15 +866,17 @@ $custom_job_titles = [
                             </div>
                             <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
                                 <div>
-                                    <h5 class="font-bold text-slate-800 text-sm leading-snug">
+                                    <!-- ชื่อภาษาไทยหนาๆ -->
+                                    <h5 class="font-extrabold text-slate-800 text-sm leading-snug">
                                         <?php echo htmlspecialchars($tech['th']); ?>
                                     </h5>
-                                    <p class="text-[11px] font-medium text-slate-400 italic mt-0.5">
+                                    <!-- ชื่อภาษาอังกฤษ -->
+                                    <p class="text-[11px] font-medium text-slate-400 mt-0.5">
                                         <?php echo htmlspecialchars($tech['eng']); ?>
                                     </p>
                                     
-                                    <!-- 💡 แสดงผลตำแหน่งงานใต้ชื่อภาษาอังกฤษ -->
-                                    <p class="text-[10px] font-bold text-indigo-500 mt-1.5 bg-indigo-50 inline-block px-2 py-0.5 rounded">
+                                    <!-- 💡 ปรับดีไซน์ตำแหน่งให้เป็นตัวหนังสือสีน้ำเงินเข้ม สะอาดตา ไม่เป็นกรอบแท็ก -->
+                                    <p class="text-[11px] font-bold text-indigo-600 mt-2">
                                         <?php echo htmlspecialchars($tech['job_title']); ?>
                                     </p>
 
@@ -884,8 +884,9 @@ $custom_job_titles = [
                                         $clean_phone_card = str_replace(', ', ',', $tech['phone']);
                                         $display_phone_card = str_replace(',', ',<br>', htmlspecialchars($clean_phone_card, ENT_QUOTES));
                                     ?>
-                                    <div class="text-xs text-indigo-600 font-semibold mt-2.5 flex items-start">
-                                        <i class="fas fa-phone text-[10px] mr-2 mt-1 opacity-70"></i> 
+                                    <!-- 💡 ปรับสีเบอร์โทรให้ซอฟต์ลงเป็นสีเทา เพื่อไม่ให้แย่งความเด่นจากตำแหน่งงาน -->
+                                    <div class="text-[11px] text-slate-500 font-medium mt-1.5 flex items-start">
+                                        <i class="fas fa-phone text-[10px] mr-1.5 mt-0.5 text-slate-400"></i> 
                                         <span><?php echo $display_phone_card; ?></span>
                                     </div>
                                     <?php endif; ?>
